@@ -300,15 +300,47 @@
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
       * { transition: none !important; }
+      .grain, .marquee-track { animation: none !important; }
     }
+
+    /* ---- Texture & motion upgrade ---- */
+    .grain {
+      position: fixed; inset: -10%; z-index: 60; pointer-events: none; opacity: .05;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+      animation: grain 1.1s steps(4) infinite;
+    }
+    @keyframes grain {
+      0% { transform: translate(0, 0); } 25% { transform: translate(-3%, 2%); }
+      50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -2%); }
+      100% { transform: translate(0, 0); }
+    }
+    .reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s cubic-bezier(.22,.61,.36,1); }
+    .reveal.in { opacity: 1; transform: none; }
+    .marquee { overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface); padding: 13px 0; }
+    .marquee-track { display: flex; width: max-content; animation: marquee 32s linear infinite; }
+    .marquee-track span { white-space: nowrap; font-family: "IBM Plex Mono", monospace; font-size: 12.5px; letter-spacing: .22em; color: var(--muted); }
+    .marquee-track i { font-style: normal; color: var(--accent); margin: 0 1.5rem; }
+    @keyframes marquee { to { transform: translateX(-50%); } }
+    .hero { position: relative; overflow: hidden; }
+    .hero > div { position: relative; z-index: 1; }
+    .wave-canvas { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 130px; opacity: .4; pointer-events: none; }
+    .spotify-embed { transition: transform .35s ease, box-shadow .35s ease; }
+    .release:hover .spotify-embed { transform: translateY(-4px); box-shadow: 0 16px 36px rgba(18,18,12,.20); }
+    .watch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: clamp(26px, 4vw, 46px); margin-top: 10px; }
+    .video-frame { position: relative; padding-top: 56.25%; border-radius: 12px; overflow: hidden; background: #0d0d0b; box-shadow: var(--shadow); transition: transform .35s ease, box-shadow .35s ease; }
+    .video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .video-card:hover .video-frame { transform: translateY(-5px); box-shadow: 0 22px 48px rgba(18,18,12,.24); }
+    .video-card .release-head { padding-top: 14px; }
   </style>
 </head>
 <body>
+  <div class="grain" aria-hidden="true"></div>
   <header class="wrap topbar">
     <a class="identity" href="#top" aria-label="Joshua King, back to top">Joshua King</a>
     <nav class="nav" aria-label="Primary navigation">
       <a href="#work">Work</a>
       <a href="#listen">Listen</a>
+      <a href="#watch">Watch</a>
       <a href="#services">Services</a>
       <a href="#about">About</a>
       <a class="contact-link" href="mailto:jckproductions120@gmail.com">Start a project ↗</a>
@@ -317,6 +349,7 @@
 
   <main id="top">
     <div class="wrap hero">
+      <canvas id="wave" class="wave-canvas" aria-hidden="true"></canvas>
       <div>
         <p class="eyebrow mono">MUSIC PRODUCER / COMPOSER</p>
         <h1>Original music for <em>your</em> project.</h1>
@@ -341,6 +374,12 @@
       </div>
     </div>
 
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>POP <i>◆</i> ORCHESTRAL <i>◆</i> HIP-HOP <i>◆</i> CINEMATIC <i>◆</i> LO-FI <i>◆</i> ELECTRONIC <i>◆</i> R&amp;B <i>◆</i> AMBIENT <i>◆</i> JAZZ <i>◆</i>&nbsp;</span>
+        <span>POP <i>◆</i> ORCHESTRAL <i>◆</i> HIP-HOP <i>◆</i> CINEMATIC <i>◆</i> LO-FI <i>◆</i> ELECTRONIC <i>◆</i> R&amp;B <i>◆</i> AMBIENT <i>◆</i> JAZZ <i>◆</i>&nbsp;</span>
+      </div>
+    </div>
     <section class="wrap" id="work">
       <div class="section-head">
         <p class="section-number mono">01 / SELECTED WORK</p>
@@ -510,10 +549,75 @@
       </div>
     </section>
 
+    <section class="wrap" id="watch">
+      <div class="section-head">
+        <p class="section-number mono">03 / WATCH</p>
+        <h2>Music videos.</h2>
+      </div>
+      <p class="listen-intro">Official visuals and visualizers from the YouTube channel.</p>
+      <div class="watch-grid">
+        <article class="video-card">
+          <div class="video-frame">
+            <iframe src="https://www.youtube.com/embed/OAiiUQFj0xg" title="Flash &mdash; Joshua King (Official Visualizer)" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          </div>
+          <div class="release-head">
+            <h3>FLASH</h3>
+            <p>Official visualizer</p>
+          </div>
+        </article>
+
+        <article class="video-card">
+          <div class="video-frame">
+            <iframe src="https://www.youtube.com/embed/dyb-k0F6jVI" title="PSYCHIC &mdash; Joshua King (Official Lyric Visualizer)" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          </div>
+          <div class="release-head">
+            <h3>Psychic</h3>
+            <p>Official lyric visualizer</p>
+          </div>
+        </article>
+        <article class="video-card">
+          <div class="video-frame">
+            <iframe src="https://www.youtube.com/embed/YVtx_WsjliM" title="Violet&rsquo;s Smile (feat. Eva Violet) &mdash; Official Visualizer" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          </div>
+          <div class="release-head">
+            <h3>Violet&rsquo;s Smile</h3>
+            <p>Official visualizer</p>
+          </div>
+        </article>
+        <article class="video-card">
+          <div class="video-frame">
+            <iframe src="https://www.youtube.com/embed/1PmDg9HI9W8" title="The Barrel (feat. Markiplier and Schmoyoho) &mdash; Official Audio" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          </div>
+          <div class="release-head">
+            <h3>The Barrel</h3>
+            <p>Official audio &middot; with Markiplier &amp; Schmoyoho</p>
+          </div>
+        </article>
+        <article class="video-card">
+          <div class="video-frame">
+            <iframe src="https://www.youtube.com/embed/W9qUEBaBaJ8" title="Blue Flowers &mdash; Official Music Video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          </div>
+          <div class="release-head">
+            <h3>Blue Flowers</h3>
+            <p>Official music video</p>
+          </div>
+        </article>
+        <article class="video-card">
+          <div class="video-frame">
+            <iframe src="https://www.youtube.com/embed/9chvVWGBeBI" title="Christmas Time With You (Joshua King &amp; Alive) &mdash; Official Visualizer" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          </div>
+          <div class="release-head">
+            <h3>Christmas Time With You</h3>
+            <p>Official visualizer &middot; with ALIVE</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <section class="services" id="services">
       <div class="wrap">
         <div class="section-head">
-          <p class="section-number mono">03 / SERVICES</p>
+          <p class="section-number mono">04 / SERVICES</p>
           <h2>Music services shaped around the project.</h2>
         </div>
         <div class="service-grid">
@@ -530,7 +634,7 @@
     <section class="wrap" id="about">
       <div class="about-grid">
         <div>
-          <p class="section-number mono">04 / ABOUT</p>
+          <p class="section-number mono">05 / ABOUT</p>
           <h2>I make music with range and intention.</h2>
         </div>
         <div class="about-copy">
@@ -583,6 +687,53 @@
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Scroll-reveal on sections and cards
+    (function () {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
+      document.querySelectorAll('main section, .hero > div, article.release, article.video-card, .marquee')
+        .forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
+    })();
+
+    // Decorative animated waveform in the hero
+    (function () {
+      var c = document.getElementById('wave');
+      if (!c || !c.getContext) return;
+      var ctx = c.getContext('2d');
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var w = 0, h = 0, t = 0;
+      function size() {
+        var r = c.getBoundingClientRect();
+        w = c.width = Math.max(1, Math.floor(r.width));
+        h = c.height = Math.max(1, Math.floor(r.height));
+      }
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        var n = 72, bw = w / n;
+        for (var i = 0; i < n; i++) {
+          var p = (Math.sin(i * 0.32 + t * 1.6) * 0.5 + 0.5) * (Math.sin(i * 0.11 - t * 0.9) * 0.5 + 0.5);
+          var bh = 6 + p * (h * 0.8);
+          var x = i * bw + bw * 0.22, y = h - bh, ww = bw * 0.56;
+          var g = ctx.createLinearGradient(0, y, 0, h);
+          g.addColorStop(0, 'rgba(240,191,33,0.85)');
+          g.addColorStop(1, 'rgba(240,191,33,0.10)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(x, y, ww, bh, ww / 2); else ctx.rect(x, y, ww, bh);
+          ctx.fill();
+        }
+      }
+      size();
+      window.addEventListener('resize', size);
+      draw();
+      if (!reduced) {
+        (function loop() { t += 0.016; draw(); requestAnimationFrame(loop); })();
+      }
+    })();
   </script>
 </body>
 </html>
