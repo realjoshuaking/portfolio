@@ -313,8 +313,8 @@
       50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -2%); }
       100% { transform: translate(0, 0); }
     }
-    .reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s cubic-bezier(.22,.61,.36,1); }
-    .reveal.in { opacity: 1; transform: none; }
+    .reveal { opacity: 0; transform: translateY(26px); filter: blur(10px); transition: opacity .9s ease, transform .9s cubic-bezier(.22,.61,.36,1), filter .9s ease; }
+    .reveal.in { opacity: 1; transform: none; filter: blur(0); }
     .marquee { overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface); padding: 13px 0; }
     .marquee-track { display: flex; width: max-content; animation: marquee 32s linear infinite; }
     .marquee-track span { white-space: nowrap; font-family: "IBM Plex Mono", monospace; font-size: 12.5px; letter-spacing: .22em; color: var(--muted); }
@@ -350,6 +350,10 @@
       border: 1px solid rgba(241, 197, 47, .30);
       border-radius: 50%;
     }
+
+    /* ---- Scroll-driven dissolve between sections ---- */
+    main section { transition: opacity .8s ease, filter .8s ease, transform .8s ease; }
+    main section.dissolving { opacity: .12 !important; filter: blur(8px) !important; transform: translateY(-18px) !important; }
   </style>
 </head>
 <body>
@@ -719,6 +723,24 @@
         .forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
     })();
 
+    // Dissolve sections out as they leave the viewport (skipped for reduced motion)
+    (function () {
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduced || !('IntersectionObserver' in window)) return;
+      var seen = new Set();
+      var io2 = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.intersectionRatio >= 0.25) {
+            seen.add(e.target);
+            e.target.classList.remove('dissolving');
+          } else if (e.intersectionRatio < 0.12 && seen.has(e.target)) {
+            e.target.classList.add('dissolving');
+          }
+        });
+      }, { threshold: [0, 0.12, 0.25, 0.5, 1] });
+      document.querySelectorAll('main section').forEach(function (el) { io2.observe(el); });
+    })();
+
     // Decorative animated waveform in the hero
     (function () {
       var c = document.getElementById('wave');
@@ -762,6 +784,7 @@
       var ctx = c.getContext('2d');
       var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       var w = 0, h = 0, t = 0, lines = [], dots = [];
+      var lastY = window.scrollY || 0, shift = 0, boost = 1;
       function rnd(a, b) { return a + Math.random() * (b - a); }
       function init() {
         lines = [];
@@ -789,19 +812,24 @@
       }
       function draw(dt) {
         t += dt;
+        var sy = window.scrollY || 0;
+        boost = 1 + Math.min(2.5, Math.abs(sy - lastY) / 60);
+        lastY = sy;
+        shift += ((sy * 0.1) - shift) * 0.06;
         ctx.clearRect(0, 0, w, h);
         ctx.lineWidth = 1;
         var i, L, D, dx, dy;
         for (i = 0; i < lines.length; i++) {
           L = lines[i];
           dx = Math.cos(L.ang) * L.len / 2; dy = Math.sin(L.ang) * L.len / 2;
+          var ly = (((L.y + shift) % h) + h) % h;
           ctx.strokeStyle = 'rgba(241,197,47,' + L.a + ')';
           ctx.beginPath();
-          ctx.moveTo(L.x - dx, L.y - dy);
-          ctx.lineTo(L.x + dx, L.y + dy);
+          ctx.moveTo(L.x - dx, ly - dy);
+          ctx.lineTo(L.x + dx, ly + dy);
           ctx.stroke();
-          L.x += Math.cos(L.ang) * L.sp * dt;
-          L.y += Math.sin(L.ang) * L.sp * dt;
+          L.x += Math.cos(L.ang) * L.sp * boost * dt;
+          L.y += Math.sin(L.ang) * L.sp * boost * dt;
           if (L.x - L.len > w) L.x = -L.len; else if (L.x + L.len < 0) L.x = w + L.len;
           if (L.y - L.len > h) L.y = -L.len; else if (L.y + L.len < 0) L.y = h + L.len;
         }
@@ -811,7 +839,8 @@
           var rr = D.r * (1 + pop * 2.4);
           ctx.strokeStyle = 'rgba(241,197,47,' + (D.a * (0.3 + pop * 0.7)).toFixed(3) + ')';
           ctx.beginPath();
-          ctx.arc(D.x, D.y, rr, 0, Math.PI * 2);
+          var dyy = (((D.y + shift) % h) + h) % h;
+          ctx.arc(D.x, dyy, rr, 0, Math.PI * 2);
           ctx.stroke();
           D.x += Math.sin(t * 0.3 + D.ph) * 0.12;
           D.y += Math.cos(t * 0.23 + D.ph) * 0.10;
