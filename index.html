@@ -1945,7 +1945,7 @@
 
       var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       var W = 0, H = 0, DPR = 1, mobile = false;
-      var washes = [], branches = [], blossoms = [], petals = [], tips = [];
+      var washes = [], petals = [];
       var staticLayer = null; // offscreen: mountains + pagoda + rocks, rebuilt on resize
       var running = false, rafId = 0, tPrev = 0;
       var prog = 0.35;          // smoothed 0..1 read-progress through the section
@@ -1971,98 +1971,41 @@
       function build() {
         seed = 20260917; // reset so resizes repaint the same scene
         var i;
-        // --- drifting ink blooms: soft charcoal washes + rare gold mist ---
-        var nW = mobile ? 4 : 7;
+        // --- flowing ink swatches: the hero. Large, ultra-soft sumi washes
+        // drifting like ink blooming in water — they breathe, merge, and
+        // separate on long cycles. Seeded toward the edges so the copy
+        // column always sits in calm air; nothing bright near the text.
+        var nW = mobile ? 4 : 6;
         washes = [];
         for (i = 0; i < nW; i++) {
+          var wx;
+          if (rnd() < 0.62) {
+            // edge bias: outer bands, away from the copy block
+            wx = rnd() < 0.55 ? rnd() * W * 0.30 : W * (0.78 + rnd() * 0.30);
+          } else {
+            wx = rnd() * W;
+          }
           washes.push({
-            x: rnd() * W, y: rnd() * H,
-            r: (mobile ? 130 : 190) + rnd() * (mobile ? 130 : 230),
-            dx: (rnd() - 0.5) * 0.14, dy: (rnd() - 0.5) * 0.09,
-            ph: rnd() * 6.2832, gold: rnd() > 0.74
+            x: wx, y: rnd() * H,
+            r: (mobile ? 150 : 220) + rnd() * (mobile ? 150 : 260),
+            dx: (rnd() - 0.5) * 0.10, dy: (rnd() - 0.5) * 0.06,
+            ph: rnd() * 6.2832, gold: rnd() > 0.78
           });
         }
-        // --- the tree: trunk rises on the right, crown sweeps left across the top ---
-        branches = []; blossoms = []; tips = [];
-        growBranch(W * 0.80, H * 1.06, -Math.PI / 2 + 0.10, H * 0.46, Math.max(16, H * 0.048), 0);
-        seedCanopy();
-        // --- petals loosed from the canopy, drifting across the section ---
+        // --- falling petals: enter from the top edge, drift down with a
+        // gentle sway. Ivory and champagne-gold, a whisper of rose.
         petals = [];
-        var nP = mobile ? 16 : 40;
+        var nP = mobile ? 14 : 30;
         for (i = 0; i < nP; i++) petals.push(spawnPetal(true));
       }
 
-      // Recursive branch: tapered segments with a leftward pull so the crown
-      // sweeps across the top of the section. Terminal tips feed canopy seeding.
-      function growBranch(x, y, ang, len, wdt, depth) {
-        var segs = 3, cx = x, cy = y, a = ang, s;
-        for (s = 0; s < segs; s++) {
-          var nx = cx + Math.cos(a) * (len / segs);
-          var ny = cy + Math.sin(a) * (len / segs);
-          branches.push({ x0: cx, y0: cy, x1: nx, y1: ny, w: (wdt + wdt * 0.72) / 2, lift: 1 - ny / H });
-          cx = nx; cy = ny;
-          a += (rnd() - 0.5) * 0.8 - 0.18; // gentle leftward pull of the crown
-          wdt *= 0.72;
-        }
-        if (depth < (mobile ? 1 : 2)) {
-          var kids = depth === 0 ? 3 : 2;
-          for (var b = 0; b < kids; b++) {
-            var dir = rnd() < 0.62 ? -1 : 1; // favor the sweeping side
-            growBranch(cx, cy, a + dir * (0.45 + rnd() * 0.75), len * (0.55 + rnd() * 0.2), wdt, depth + 1);
-          }
-        } else {
-          tips.push({ x: cx, y: cy });
-        }
-      }
-
-      // The canopy: a lush, cloud-like blossom mass in three depth layers,
-      // seeded as dense gaussian clumps around focal points along the crown's
-      // sweeping arc. The arc is a near-continuous blossom band; branches
-      // disappear under blossom mass in places. The back layer is smaller,
-      // dimmer, and carries a whisper of scroll parallax.
-      function seedCanopy() {
-        var total = mobile ? 200 : 650;
-        var i, k;
-        var arc = [];
-        var nArc = mobile ? 7 : 14;
-        for (i = 0; i < nArc; i++) {
-          var f = nArc === 1 ? 0 : i / (nArc - 1);
-          arc.push({
-            x: W * (0.80 - f * 0.68) + (rnd() - 0.5) * W * 0.04,
-            y: H * (0.28 - f * 0.12) + (rnd() - 0.5) * H * 0.05,
-            r: (mobile ? 60 : 110) * (1 - f * 0.22)
-          });
-        }
-        for (k = 0; k < total; k++) {
-          var lr = rnd();
-          var layer = lr < 0.28 ? 0 : (lr < 0.66 ? 1 : 2); // back / mid / front
-          var cx, cy, cr;
-          if (rnd() < 0.72) {
-            var a = arc[(rnd() * arc.length) | 0];
-            cx = a.x; cy = a.y; cr = a.r;
-          } else if (tips.length) {
-            var tp = tips[(rnd() * tips.length) | 0];
-            cx = tp.x; cy = tp.y; cr = mobile ? 40 : 62;
-          } else { cx = W * 0.7; cy = H * 0.28; cr = 70; }
-          // gaussian-ish clumping toward the focal center: clouds, not scatter
-          var rr = (rnd() + rnd() + rnd()) / 3 * cr;
-          var ang = rnd() * 6.2832;
-          blossoms.push({
-            x: cx + Math.cos(ang) * rr, y: cy + Math.sin(ang) * rr * 0.70,
-            r: (3 + rnd() * 6) * (layer === 0 ? 0.75 : (layer === 2 ? 1.15 : 1)),
-            gold: rnd() < 0.32, rose: rnd() < 0.12, layer: layer,
-            ph: rnd() * 6.2832
-          });
-        }
-      }
-
       function spawnPetal(anyY) {
-        var b = blossoms.length ? blossoms[(rnd() * blossoms.length) | 0] : { x: W * 0.7, y: H * 0.25 };
         return {
-          x: b.x + (rnd() - 0.5) * 24, y: anyY ? rnd() * H : b.y,
-          vy: 0.22 + rnd() * 0.42, ph: rnd() * 6.2832, sw: 0.6 + rnd() * 1.1,
-          r: 2 + rnd() * 3, rot: rnd() * 6.2832, vr: (rnd() - 0.5) * 0.03,
-          gold: rnd() < 0.4, rose: rnd() < 0.1, life: 0, maxLife: 700 + rnd() * 500
+          x: rnd() * W, y: anyY ? rnd() * H : -14 - rnd() * 20,
+          vy: 0.18 + rnd() * 0.35, ph: rnd() * 6.2832, sw: 0.6 + rnd() * 1.1,
+          r: 1.8 + rnd() * 2.6, rot: rnd() * 6.2832, vr: (rnd() - 0.5) * 0.03,
+          gold: rnd() < 0.4, rose: rnd() < 0.1,
+          life: anyY ? 150 + rnd() * 400 : 0, maxLife: 700 + rnd() * 500
         };
       }
 
@@ -2079,6 +2022,7 @@
       }
 
       // Misty ridgelines receding behind: soft, low contrast, heavily blurred.
+      // Kept even fainter than before — they are pure atmosphere now.
       function drawMountains(g) {
         var ridges = mobile ? 2 : 3, r, x;
         for (r = 0; r < ridges; r++) {
@@ -2088,7 +2032,7 @@
           g.save();
           g.shadowColor = 'rgba(70,68,60,0.5)';
           g.shadowBlur = 42;
-          g.fillStyle = 'rgba(96,94,84,' + (0.05 + f * 0.05).toFixed(3) + ')';
+          g.fillStyle = 'rgba(96,94,84,' + (0.03 + f * 0.03).toFixed(3) + ')';
           g.beginPath();
           g.moveTo(-60, H + 60);
           g.lineTo(-60, baseY);
@@ -2105,18 +2049,17 @@
         }
       }
 
-      // The pagoda: a small jewel of dark ink on a rocky outcrop, nestled at
-      // the trunk's base. Three tiers of upturned eaves beneath a quiet spire.
-      // It sits slightly left and low of the trunk so it reads in the
-      // whitespace below the copy, never in front of text.
+      // The pagoda: a quiet, mist-veiled silhouette of dark ink on a rocky
+      // outcrop — a distant jewel in the washes, never a focal point. It sits
+      // low of the copy in the whitespace, behind the text, barely there.
       function drawPagoda(g) {
-        var s = Math.min(W, H) * (mobile ? 0.11 : 0.128);
+        var s = Math.min(W, H) * (mobile ? 0.10 : 0.115);
         var px = W * 0.635, py = H * 0.79;
         var i, tI;
         g.save();
         g.lineJoin = 'round'; g.lineCap = 'round';
-        g.shadowColor = 'rgba(0,0,0,0.55)'; g.shadowBlur = 12;
-        var ink = 'rgba(8,8,7,0.88)';
+        g.shadowColor = 'rgba(0,0,0,0.40)'; g.shadowBlur = 8;
+        var ink = 'rgba(8,8,7,0.55)';
         // rocky outcrop: angular dark strokes beneath the temple
         g.strokeStyle = ink;
         var rocks = [
@@ -2168,7 +2111,7 @@
         var p = prog, i;
         var push = Math.max(-2.5, Math.min(2.5, vel * 0.12)); // ink "current" from scroll
 
-        // --- ink washes: breathe + drift, nudged by scroll velocity ---
+        // --- flowing ink swatches: breathe + drift on long cycles, stirred by scroll ---
         for (i = 0; i < washes.length; i++) {
           var wsh = washes[i];
           if (dt > 0) {
@@ -2178,26 +2121,29 @@
             if (wsh.x < -m) wsh.x += W + m * 2; else if (wsh.x > W + m) wsh.x -= W + m * 2;
             if (wsh.y < -m) wsh.y += H + m * 2; else if (wsh.y > H + m) wsh.y -= H + m * 2;
           }
-          var breathe = 1 + Math.sin(t * 0.00021 + wsh.ph) * 0.12;
+          // two slow breathing cycles (~30s and ~48s): washes merge and separate
+          var breathe = 1 + Math.sin(t * 0.00021 + wsh.ph) * 0.10
+                          + Math.sin(t * 0.00013 + wsh.ph * 1.7) * 0.08;
           var wr = wsh.r * breathe;
+          var depth = 0.75 + p * 0.5; // washes deepen a touch as the reader moves through
           var g = ctx.createRadialGradient(wsh.x, wsh.y, 0, wsh.x, wsh.y, wr);
           if (wsh.gold) {
-            g.addColorStop(0, 'rgba(241,197,47,0.050)');
+            g.addColorStop(0, 'rgba(241,197,47,' + (0.050 * depth).toFixed(3) + ')');
             g.addColorStop(1, 'rgba(241,197,47,0)');
           } else {
-            g.addColorStop(0, 'rgba(96,94,84,0.10)');
-            g.addColorStop(0.6, 'rgba(70,68,60,0.055)');
+            g.addColorStop(0, 'rgba(96,94,84,' + (0.10 * depth).toFixed(3) + ')');
+            g.addColorStop(0.6, 'rgba(70,68,60,' + (0.055 * depth).toFixed(3) + ')');
             g.addColorStop(1, 'rgba(70,68,60,0)');
           }
           ctx.fillStyle = g;
           ctx.fillRect(wsh.x - wr, wsh.y - wr, wr * 2, wr * 2);
         }
 
-        // --- static scenery: mountains, pagoda, rocks ---
+        // --- static scenery: mist-veiled mountains, distant pagoda, rocks ---
         if (staticLayer) ctx.drawImage(staticLayer, 0, 0, W, H);
 
-        // --- pale moon-mist over the canopy; deepens as you read ---
-        var tx = W * 0.48, ty = H * 0.24;
+        // --- pale mist: the whole scene breathes a little deeper as you read ---
+        var tx = W * 0.5, ty = H * 0.3;
         var mistA = 0.05 + p * 0.05;
         var mg = ctx.createRadialGradient(tx, ty, 0, tx, ty, Math.max(W, H) * 0.42);
         mg.addColorStop(0, 'rgba(243,243,237,' + mistA.toFixed(3) + ')');
@@ -2205,48 +2151,7 @@
         ctx.fillStyle = mg;
         ctx.fillRect(0, 0, W, H);
 
-        // --- trunk and limbs: sway gently, more alive deeper into the read ---
-        var sway = 0.6 + p * 1.4;
-        ctx.lineCap = 'round';
-        ctx.shadowColor = 'rgba(0,0,0,0.55)';
-        ctx.shadowBlur = 14; // soft ink edge
-        ctx.strokeStyle = 'rgba(8,8,7,0.88)';
-        for (i = 0; i < branches.length; i++) {
-          var br = branches[i];
-          var off = Math.sin(t * 0.0009 + br.lift * 2.2) * 7 * sway * br.lift;
-          ctx.lineWidth = Math.max(1, br.w);
-          ctx.beginPath();
-          ctx.moveTo(br.x0 + off * 0.4, br.y0);
-          ctx.lineTo(br.x1 + off, br.y1);
-          ctx.stroke();
-        }
-        ctx.shadowBlur = 0;
-
-        // --- the canopy: blossoms in three depth layers, back layer parallaxes ---
-        for (i = 0; i < blossoms.length; i++) {
-          var bl = blossoms[i];
-          var tw = 0.42 + Math.sin(t * 0.0013 + bl.ph) * 0.10;
-          var par = (bl.layer - 1) * p * 10 + push * bl.layer * 0.35;
-          var bx = bl.x + par, by = bl.y + (bl.layer - 1) * p * 4;
-          var base = bl.rose ? '232,178,190' : (bl.gold ? '241,197,47' : '243,243,237');
-          var ba = bl.rose ? tw * 0.6 : (bl.gold ? tw : tw + 0.08);
-          if (bl.layer === 0) ba *= 0.7; // back layer recedes
-          ctx.fillStyle = 'rgba(' + base + ',' + Math.max(0, ba).toFixed(3) + ')';
-          // each blossom is a soft 5-petal cluster, not a round speck
-          var pr = bl.r, pt2, pa2;
-          for (pt2 = 0; pt2 < 5; pt2++) {
-            pa2 = bl.ph + pt2 * 1.2566;
-            ctx.beginPath();
-            ctx.ellipse(bx + Math.cos(pa2) * pr * 0.52, by + Math.sin(pa2) * pr * 0.44,
-                        pr * 0.62, pr * 0.46, pa2, 0, 6.2832);
-            ctx.fill();
-          }
-          ctx.beginPath();
-          ctx.ellipse(bx, by, pr * 0.5, pr * 0.42, 0, 0, 6.2832);
-          ctx.fill();
-        }
-
-        // --- petals loosed from the canopy, drifting across the section ---
+        // --- falling petals: from the top edge, drifting down, gently swaying ---
         for (i = 0; i < petals.length; i++) {
           var pt = petals[i];
           if (dt > 0) {
