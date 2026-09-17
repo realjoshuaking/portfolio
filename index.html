@@ -8,7 +8,7 @@
   <link rel="icon" href="data:," />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
   <title>Joshua King | Music Producer &amp; Composer</title>
   <style>
     :root {
@@ -251,6 +251,19 @@
     .about-copy .toolbox-intro p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
     .tool { display: flex; justify-content: space-between; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
     .tool span:last-child { color: var(--muted); text-align: right; }
+    /* ---- Ink-wash About background: canvas sits behind the copy, softly blurred ---- */
+    #about { position: relative; overflow: hidden; }
+    #ink-wash { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; filter: blur(2.5px); }
+    #about .about-grid { position: relative; z-index: 1; }
+    /* ---- UI sound toggle (nav) ---- */
+    .sound-toggle { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-left: 4px; padding: 0; background: none; border: 0; border-radius: 50%; color: var(--muted); cursor: pointer; }
+    .sound-toggle:hover { color: var(--accent); }
+    .sound-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .sound-toggle .slash { opacity: 0; transition: opacity .25s; }
+    .sound-toggle .wave { transition: opacity .25s; }
+    .sound-toggle[aria-pressed="true"] { opacity: .55; }
+    .sound-toggle[aria-pressed="true"] .slash { opacity: 1; }
+    .sound-toggle[aria-pressed="true"] .wave { opacity: 0; }
     .contact { padding-top: 0; }
     .contact-panel { background: var(--accent); color: var(--accent-ink); padding: clamp(42px, 7vw, 84px); }
     .contact-panel h2 { max-width: 850px; }
@@ -431,6 +444,164 @@
     /* ---- Scroll-driven dissolve between sections ---- */
     main section { transition: opacity .8s ease, filter .8s ease, transform .8s ease; }
     main section.dissolving { opacity: .12 !important; filter: blur(8px) !important; transform: translateY(-18px) !important; }
+    /* ---- On-site audio player ("The Jukebox") ---- */
+    :root { --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif; }
+    body.jk-docked { padding-bottom: 78px; }
+    @media (max-width: 780px) { body.jk-docked { padding-bottom: 70px; } }
+
+    .jk-player { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; font-family: "Manrope", sans-serif; }
+
+    /* Mini bar */
+    .jk-mini {
+      position: relative;
+      display: flex; align-items: center; gap: 14px;
+      padding: 10px 18px 10px 14px;
+      background: rgba(16, 16, 15, .88);
+      -webkit-backdrop-filter: blur(18px) saturate(1.25);
+      backdrop-filter: blur(18px) saturate(1.25);
+      border-top: 1px solid rgba(241, 197, 47, .30);
+    }
+    .jk-progress-mini { position: absolute; top: -1px; left: 0; right: 0; height: 2px; background: rgba(243, 243, 237, .08); }
+    .jk-progress-mini span { display: block; height: 100%; width: 0%; background: var(--accent); }
+    .jk-disc {
+      flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%;
+      border: 1px solid rgba(241, 197, 47, .55);
+      background: radial-gradient(circle at 50% 36%, #20201d, #10100f 72%);
+      display: grid; place-items: center; cursor: pointer; padding: 0;
+      transition: box-shadow .3s ease;
+    }
+    .jk-disc:hover { box-shadow: 0 0 22px rgba(241, 197, 47, .28); }
+    .jk-disc:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .jk-disc svg { width: 27px; height: 27px; }
+    .jk-player.playing .jk-disc svg { animation: jk-spin 18s linear infinite; }
+    @keyframes jk-spin { to { transform: rotate(360deg); } }
+    .jk-mini-meta { min-width: 0; flex: 1 1 auto; }
+    .jk-mini-kicker { margin: 0; font-size: 10px; letter-spacing: .30em; text-transform: uppercase; color: var(--muted); }
+    .jk-mini-kicker b { color: var(--accent); font-weight: 500; }
+    .jk-mini-title {
+      margin: 3px 0 0; font-family: var(--serif); font-weight: 600; font-size: 21px; line-height: 1.15;
+      letter-spacing: .01em; color: var(--ink);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .jk-mini-controls { display: flex; align-items: center; gap: 4px; }
+
+    /* Buttons */
+    .jk-btn {
+      display: inline-grid; place-items: center;
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1px solid transparent; background: transparent; color: var(--ink);
+      cursor: pointer; padding: 0;
+      transition: border-color .25s ease, background .25s ease;
+    }
+    .jk-btn:hover { border-color: rgba(241, 197, 47, .55); background: rgba(241, 197, 47, .08); }
+    .jk-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .jk-btn svg { width: 18px; height: 18px; }
+    .jk-btn-play { width: 46px; height: 46px; background: var(--accent); color: var(--accent-ink); }
+    .jk-btn-play:hover { background: var(--ink); border-color: var(--ink); }
+    .jk-btn-play svg { width: 20px; height: 20px; }
+
+    /* Expanded sheet */
+    .jk-sheet {
+      position: fixed; left: 50%; bottom: 0;
+      transform: translate(-50%, 106%);
+      width: min(680px, calc(100% - 24px));
+      max-height: min(80vh, 660px);
+      display: flex; flex-direction: column;
+      background: rgba(20, 20, 18, .94);
+      -webkit-backdrop-filter: blur(26px) saturate(1.3);
+      backdrop-filter: blur(26px) saturate(1.3);
+      border: 1px solid rgba(241, 197, 47, .24); border-bottom: 0;
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -26px 90px rgba(0, 0, 0, .55);
+      transition: transform .55s cubic-bezier(.22, .61, .36, 1), visibility .55s;
+      visibility: hidden;
+    }
+    .jk-player.open .jk-sheet { transform: translate(-50%, 0); visibility: visible; }
+    .jk-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 14px 0 22px; }
+    .jk-sheet-kicker { margin: 0; font-size: 10px; letter-spacing: .36em; text-transform: uppercase; color: var(--muted); }
+    .jk-sheet-kicker b { color: var(--accent); font-weight: 500; }
+    .jk-now { text-align: center; padding: 8px 28px 0; }
+    .jk-blossom { width: 52px; height: 52px; margin: 4px auto 8px; opacity: .95; }
+    .jk-blossom svg { width: 100%; height: 100%; }
+    .jk-title {
+      margin: 0; font-family: var(--serif); font-weight: 600;
+      font-size: clamp(34px, 6vw, 48px); line-height: 1.04; letter-spacing: .005em; color: var(--ink);
+    }
+    .jk-sub { margin: 9px 0 0; font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--muted); }
+    .jk-times { display: flex; justify-content: space-between; padding: 20px 28px 6px; font-size: 11px; letter-spacing: .08em; color: var(--muted); }
+    .jk-seek { margin: 0 28px; padding: 12px 0; cursor: pointer; border-radius: 6px; }
+    .jk-seek:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+    .jk-seek-track { position: relative; height: 2px; background: rgba(243, 243, 237, .15); border-radius: 2px; }
+    .jk-seek-fill { position: absolute; top: 0; bottom: 0; left: 0; width: 0%; background: linear-gradient(90deg, rgba(241, 197, 47, .55), var(--accent)); border-radius: 2px; }
+    .jk-seek-knob {
+      position: absolute; top: 50%; left: 0%; width: 13px; height: 13px; border-radius: 50%;
+      background: var(--accent); transform: translate(-50%, -50%);
+      box-shadow: 0 0 14px rgba(241, 197, 47, .7);
+      opacity: 0; transition: opacity .25s ease;
+    }
+    .jk-seek:hover .jk-seek-knob, .jk-seek:focus-visible .jk-seek-knob, .jk-seek.dragging .jk-seek-knob { opacity: 1; }
+    .jk-transport { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 4px 0 2px; }
+    .jk-btn-big { width: 64px; height: 64px; background: var(--accent); color: var(--accent-ink); }
+    .jk-btn-big:hover { background: var(--ink); border-color: var(--ink); }
+    .jk-btn-big svg { width: 24px; height: 24px; }
+    .jk-vol-wrap { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px 0 0; }
+    .jk-vol {
+      -webkit-appearance: none; appearance: none;
+      width: 132px; height: 2px; border-radius: 2px;
+      background: rgba(243, 243, 237, .16); cursor: pointer; padding: 0;
+    }
+    .jk-vol::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 0; }
+    .jk-vol::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 0; }
+    .jk-vol::-moz-range-track { height: 2px; background: rgba(243, 243, 237, .16); }
+    .jk-vol:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
+    .jk-note {
+      margin: 12px 28px 0; padding: 10px 14px;
+      border: 1px solid rgba(241, 197, 47, .35); border-radius: 8px;
+      font-size: 12.5px; line-height: 1.55; color: var(--muted); text-align: center;
+    }
+    .jk-note b { color: var(--accent); font-weight: 600; }
+    .jk-note[hidden] { display: none; }
+
+    /* Playlist */
+    .jk-list { list-style: none; margin: 14px 0 0; padding: 2px 12px 20px; overflow-y: auto; min-height: 0; }
+    .jk-list li + li { margin-top: 2px; }
+    .jk-track {
+      display: grid; grid-template-columns: 30px 1fr auto auto; gap: 12px; align-items: center;
+      width: 100%; text-align: left;
+      background: transparent; border: 0; border-left: 2px solid transparent; border-radius: 0 8px 8px 0;
+      padding: 11px 14px 11px 12px; cursor: pointer; color: var(--ink);
+      transition: background .25s ease, border-color .25s ease;
+    }
+    .jk-track:hover { background: rgba(243, 243, 237, .05); }
+    .jk-track:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .jk-track.active { border-left-color: var(--accent); background: rgba(241, 197, 47, .07); }
+    .jk-track-num { font-size: 11px; letter-spacing: .06em; color: var(--muted); }
+    .jk-track.active .jk-track-num { color: var(--accent); }
+    .jk-track-title { display: block; font-family: var(--serif); font-weight: 600; font-size: 20px; line-height: 1.2; letter-spacing: .01em; }
+    .jk-track-meta { display: block; margin-top: 4px; font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+    .jk-eq { display: none; align-items: flex-end; gap: 3px; height: 14px; }
+    .jk-track.active .jk-eq { display: inline-flex; }
+    .jk-eq i { width: 2.5px; border-radius: 2px; background: var(--accent); transform-origin: bottom; animation: jk-eq 1.15s ease-in-out infinite; }
+    .jk-eq i:nth-child(1) { height: 55%; }
+    .jk-eq i:nth-child(2) { height: 100%; animation-delay: .22s; }
+    .jk-eq i:nth-child(3) { height: 70%; animation-delay: .44s; }
+    @keyframes jk-eq { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+    .jk-track-dur { font-size: 12px; letter-spacing: .05em; color: var(--muted); }
+
+    @media (max-width: 560px) {
+      .jk-mini { gap: 10px; padding: 8px 10px 8px 10px; }
+      .jk-mini-kicker { display: none; }
+      .jk-mini-title { font-size: 18px; }
+      .jk-disc { width: 42px; height: 42px; }
+      .jk-btn { width: 36px; height: 36px; }
+      .jk-btn-play { width: 42px; height: 42px; }
+      .jk-sheet { width: 100%; left: 0; right: 0; transform: translateY(106%); border-radius: 0; border-left: 0; border-right: 0; max-height: 94vh; }
+      .jk-player.open .jk-sheet { transform: translateY(0); }
+      .jk-vol-wrap { display: none; }
+      .jk-times, .jk-seek { margin-left: 20px; margin-right: 20px; }
+      .jk-times { padding-left: 0; padding-right: 0; }
+      .jk-note { margin-left: 20px; margin-right: 20px; }
+    }
   </style>
 </head>
 <body>
@@ -448,12 +619,19 @@
   <header class="wrap topbar">
     <a class="identity" href="#top" aria-label="Joshua King, back to top">Joshua King</a>
     <nav class="nav" aria-label="Primary navigation">
-      <a href="#work">Work</a>
-      <a href="#listen">Listen</a>
-      <a href="#watch">Watch</a>
-      <a href="#services">Services</a>
-      <a href="#about">About</a>
-      <a class="contact-link" href="mailto:jckproductions120@gmail.com">Start a project ↗</a>
+      <a href="services.html">Services</a>
+      <a href="work.html">Work</a>
+      <a href="testimonials.html">Testimonials</a>
+      <a href="epk.html">Press Kit</a>
+      <a class="contact-link" href="contact.html">Book a project</a>
+      <button class="sound-toggle" id="soundToggle" aria-pressed="false" aria-label="Turn interface sounds off" title="Toggle interface sounds">
+        <svg viewBox="0 0 18 18" width="15" height="15" aria-hidden="true" focusable="false">
+          <path d="M2 6.5v5h3.2L10 15.2V2.8L5.2 6.5H2z" fill="currentColor"></path>
+          <path class="wave" d="M12 6.2a3.4 3.4 0 0 1 0 5.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+          <path class="wave" d="M13.8 4.4a6 6 0 0 1 0 9.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+          <line class="slash" x1="2.5" y1="15.5" x2="15.5" y2="2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></line>
+        </svg>
+      </button>
     </nav>
   </header>
 
@@ -742,6 +920,7 @@
     </section>
 
     <section class="wrap" id="about">
+      <canvas id="ink-wash" aria-hidden="true"></canvas>
       <div class="about-grid">
         <div>
           <p class="section-number mono">05 / ABOUT</p>
@@ -794,6 +973,96 @@
       </div>
     </div>
   </footer>
+
+  <!-- On-site audio player ("The Jukebox") — 100% static, no backend. -->
+  <div class="jk-player" id="jkPlayer">
+    <div class="jk-mini">
+      <div class="jk-progress-mini" aria-hidden="true"><span id="jkProgMini"></span></div>
+      <button class="jk-disc" id="jkDiscBtn" aria-label="Open the full music player">
+        <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+          <g fill="rgba(241,197,47,.10)" stroke="#f1c52f" stroke-width="1.4">
+            <ellipse cx="24" cy="13" rx="6.5" ry="10"/>
+            <ellipse cx="24" cy="13" rx="6.5" ry="10" transform="rotate(72 24 24)"/>
+            <ellipse cx="24" cy="13" rx="6.5" ry="10" transform="rotate(144 24 24)"/>
+            <ellipse cx="24" cy="13" rx="6.5" ry="10" transform="rotate(216 24 24)"/>
+            <ellipse cx="24" cy="13" rx="6.5" ry="10" transform="rotate(288 24 24)"/>
+          </g>
+          <circle cx="24" cy="24" r="3" fill="#f1c52f"/>
+        </svg>
+      </button>
+      <div class="jk-mini-meta">
+        <p class="jk-mini-kicker mono">The Jukebox <b>◆</b> <span id="jkTag">Single</span></p>
+        <p class="jk-mini-title" id="jkMiniTitle" title="">—</p>
+      </div>
+      <div class="jk-mini-controls">
+        <button class="jk-btn" id="jkPrev" aria-label="Previous track">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 5h2.4v14H6zM19.5 5v14L9.5 12z" fill="currentColor"/></svg>
+        </button>
+        <button class="jk-btn jk-btn-play" id="jkPlay" aria-label="Play">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+        </button>
+        <button class="jk-btn" id="jkNext" aria-label="Next track">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15.6 5H18v14h-2.4zM4.5 5v14l10-7z" fill="currentColor"/></svg>
+        </button>
+        <button class="jk-btn" id="jkExpand" aria-label="Expand music player" aria-expanded="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 14.5l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="jk-sheet" id="jkSheet" role="dialog" aria-label="Music player">
+      <div class="jk-sheet-head">
+        <p class="jk-sheet-kicker mono"><b>◆</b>&nbsp;&nbsp;The Jukebox&nbsp;&nbsp;<b>◆</b></p>
+        <button class="jk-btn" id="jkClose" aria-label="Minimize music player">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="jk-now">
+        <div class="jk-blossom" aria-hidden="true">
+          <svg viewBox="0 0 48 48" focusable="false">
+            <g fill="rgba(241,197,47,.10)" stroke="#f1c52f" stroke-width="1.2">
+              <ellipse cx="24" cy="13" rx="6.5" ry="10"/>
+              <ellipse cx="24" cy="13" rx="6.5" ry="10" transform="rotate(72 24 24)"/>
+              <ellipse cx="24" cy="13" rx="6.5" ry="10" transform="rotate(144 24 24)"/>
+              <ellipse cx="24" cy="13" rx="6.5" ry="10" transform="rotate(216 24 24)"/>
+              <ellipse cx="24" cy="13" rx="6.5" ry="10" transform="rotate(288 24 24)"/>
+            </g>
+            <circle cx="24" cy="24" r="3" fill="#f1c52f"/>
+          </svg>
+        </div>
+        <p class="jk-title" id="jkTitle">—</p>
+        <p class="jk-sub mono" id="jkSub">—</p>
+      </div>
+      <div class="jk-times mono"><span id="jkCur">0:00</span><span id="jkDur">–:––</span></div>
+      <div class="jk-seek" id="jkSeek" role="slider" tabindex="0" aria-label="Seek through track" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="0:00 of unknown length">
+        <div class="jk-seek-track">
+          <div class="jk-seek-fill" id="jkSeekFill"></div>
+          <div class="jk-seek-knob" id="jkSeekKnob"></div>
+        </div>
+      </div>
+      <div class="jk-transport">
+        <button class="jk-btn" id="jkPrev2" aria-label="Previous track">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 5h2.4v14H6zM19.5 5v14L9.5 12z" fill="currentColor"/></svg>
+        </button>
+        <button class="jk-btn jk-btn-play jk-btn-big" id="jkPlay2" aria-label="Play">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+        </button>
+        <button class="jk-btn" id="jkNext2" aria-label="Next track">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15.6 5H18v14h-2.4zM4.5 5v14l10-7z" fill="currentColor"/></svg>
+        </button>
+      </div>
+      <div class="jk-vol-wrap">
+        <button class="jk-btn" id="jkMute" aria-label="Mute">
+          <svg id="jkVolIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <svg id="jkMuteIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="display:none"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <input class="jk-vol" id="jkVol" type="range" min="0" max="1" step="0.01" value="0.9" aria-label="Volume">
+      </div>
+      <p class="jk-note" id="jkNote" hidden><b>Fresh from the studio soon.</b> The final MP3s are still being prepared — this preview will play as soon as they are added to the site.</p>
+      <ol class="jk-list" id="jkList" aria-label="Playlist"></ol>
+    </div>
+    <audio id="jkAudio" preload="metadata"></audio>
+  </div>
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -1357,5 +1626,616 @@
       requestAnimationFrame(frame);
     })();
   </script>
+  <script>
+    // =====================================================================
+    // "The Jukebox" — on-site audio player for joshuaking portfolio.
+    // 100% static: a single <audio> element, no backend, no dependencies.
+    // =====================================================================
+    (function () {
+      "use strict";
+
+      /* -------------------------------------------------------------------
+         PLACEHOLDER PLAYLIST
+         These entries seed the jukebox until the real studio MP3s exist.
+         Every `src` points at audio/<slug>.mp3 — files that DO NOT EXIST
+         YET. To take the player live:
+           1. Export the final masters as MP3s.
+           2. Drop them into an `audio/` folder next to index.html using
+              the exact filenames listed below.
+           3. Replace each placeholder `duration` string with the real
+              track length (the player auto-reads real durations from file
+              metadata once the MP3s are present, so this step is cosmetic).
+         Titles, genres, and years below are REAL (taken from the site's
+         Listen section). Only the audio files and the duration strings
+         are placeholders.
+         ------------------------------------------------------------------- */
+      var TRACKS = [
+        { title: "The Barrel",       meta: "Comedy pop · 2020",            tag: "Single",          src: "audio/the-barrel.mp3",       duration: "3:24" /* placeholder */ },
+        { title: "FLASH",            meta: "Pop · 2025",                    tag: "Single",          src: "audio/flash.mp3",            duration: "3:12" /* placeholder */ },
+        { title: "Psychic",          meta: "Alternative pop",               tag: "Single",          src: "audio/psychic.mp3",          duration: "3:41" /* placeholder */ },
+        { title: "Violet\u2019s Smile", meta: "Cinematic pop · 2022",       tag: "Single",          src: "audio/violets-smile.mp3",    duration: "4:05" /* placeholder */ },
+        { title: "ZENITH",           meta: "Cinematic electronic",          tag: "Single",          src: "audio/zenith.mp3",           duration: "3:58" /* placeholder */ },
+        { title: "Blue Flowers",     meta: "Lo-fi · Blue Flowers EP, 2020", tag: "EP selection",    src: "audio/blue-flowers.mp3",     duration: "2:47" /* placeholder */ },
+        { title: "Legato",           meta: "Orchestral · Legato, 2026",     tag: "Album selection", src: "audio/legato.mp3",           duration: "5:16" /* placeholder */ },
+        { title: "Beneath the Moon", meta: "Bossa nova / salsa",            tag: "Single",          src: "audio/beneath-the-moon.mp3", duration: "3:33" /* placeholder */ }
+      ];
+
+      var ICON_PLAY  = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>';
+      var ICON_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z" fill="currentColor"/></svg>';
+
+      function $(id) { return document.getElementById(id); }
+
+      var player   = $("jkPlayer"),
+          audio    = $("jkAudio"),
+          sheet    = $("jkSheet"),
+          playBtns = [$("jkPlay"), $("jkPlay2")],
+          note     = $("jkNote"),
+          listEl   = $("jkList"),
+          seekEl   = $("jkSeek"),
+          seekFill = $("jkSeekFill"),
+          seekKnob = $("jkSeekKnob"),
+          curEl    = $("jkCur"),
+          durEl    = $("jkDur"),
+          progMini = $("jkProgMini"),
+          titleEl  = $("jkTitle"),
+          subEl    = $("jkSub"),
+          miniTitle= $("jkMiniTitle"),
+          tagEl    = $("jkTag"),
+          volEl    = $("jkVol"),
+          muteBtn  = $("jkMute"),
+          volIcon  = $("jkVolIcon"),
+          muteIcon = $("jkMuteIcon"),
+          expandBtn= $("jkExpand"),
+          closeBtn = $("jkClose");
+
+      var idx = 0, seeking = false, lastFocus = null;
+
+      // Restore volume + last track (best effort; private mode may block storage)
+      try {
+        var saved = JSON.parse(localStorage.getItem("jkPlayer") || "{}");
+        if (typeof saved.vol === "number") audio.volume = Math.min(1, Math.max(0, saved.vol));
+        if (typeof saved.track === "number" && saved.track >= 0 && saved.track < TRACKS.length) idx = saved.track;
+      } catch (e) { /* storage unavailable — play on with defaults */ }
+      if (!audio.volume && audio.volume !== 0) audio.volume = 0.9;
+
+      function persist() {
+        try { localStorage.setItem("jkPlayer", JSON.stringify({ vol: audio.volume, track: idx })); } catch (e) {}
+      }
+
+      function fmt(s) {
+        if (!isFinite(s) || s < 0) return "\u2013:\u2013\u2013";
+        s = Math.floor(s);
+        return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2);
+      }
+
+      // ---- Playlist rendering ----
+      function renderList() {
+        listEl.innerHTML = "";
+        TRACKS.forEach(function (t, i) {
+          var li = document.createElement("li");
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "jk-track" + (i === idx ? " active" : "");
+          b.setAttribute("aria-label", "Play " + t.title);
+          if (i === idx) b.setAttribute("aria-current", "true");
+          var num = String(i + 1).padStart(2, "0");
+          b.innerHTML =
+            '<span class="jk-track-num mono">' + num + '</span>' +
+            '<span><span class="jk-track-title">' + t.title + '</span>' +
+            '<span class="jk-track-meta mono">' + t.meta + '</span></span>' +
+            '<span class="jk-eq" aria-hidden="true"><i></i><i></i><i></i></span>' +
+            '<span class="jk-track-dur mono" data-dur="' + i + '">' + t.duration + "</span>";
+          b.addEventListener("click", function () { select(i, true); });
+          li.appendChild(b);
+          listEl.appendChild(li);
+        });
+      }
+
+      function markActive() {
+        var rows = listEl.querySelectorAll(".jk-track");
+        rows.forEach(function (r, i) {
+          r.classList.toggle("active", i === idx);
+          if (i === idx) r.setAttribute("aria-current", "true");
+          else r.removeAttribute("aria-current");
+        });
+      }
+
+      // ---- Transport ----
+      function select(i, autoplay) {
+        idx = (i + TRACKS.length) % TRACKS.length;
+        var t = TRACKS[idx];
+        note.hidden = true;
+        audio.src = t.src;
+        titleEl.textContent = t.title;
+        subEl.textContent = t.meta;
+        miniTitle.textContent = t.title;
+        miniTitle.title = t.title;
+        tagEl.textContent = t.tag;
+        curEl.textContent = "0:00";
+        durEl.textContent = t.duration; // placeholder until metadata loads
+        setProgress(0);
+        markActive();
+        setMediaSession(t);
+        persist();
+        if (autoplay) play();
+        else setPlayUI(false);
+      }
+
+      function play() {
+        var p = audio.play();
+        if (p && p.catch) p.catch(function () { setPlayUI(false); });
+      }
+      function pause() { audio.pause(); }
+      function toggle() { if (audio.paused) play(); else pause(); }
+      function next() { select(idx + 1, true); }
+      function prev() {
+        // Restart the track if more than 3s in, otherwise go back
+        if (audio.currentTime > 3) { audio.currentTime = 0; }
+        else select(idx - 1, true);
+      }
+
+      function setPlayUI(playing) {
+        player.classList.toggle("playing", playing);
+        playBtns.forEach(function (b) {
+          b.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+          b.setAttribute("aria-label", playing ? "Pause" : "Play");
+        });
+      }
+
+      audio.addEventListener("play",  function () { setPlayUI(true); });
+      audio.addEventListener("pause", function () { setPlayUI(false); });
+      audio.addEventListener("ended", function () { next(); });
+
+      audio.addEventListener("loadedmetadata", function () {
+        if (isFinite(audio.duration)) {
+          var d = fmt(audio.duration);
+          durEl.textContent = d;
+          var cell = listEl.querySelector('[data-dur="' + idx + '"]');
+          if (cell) cell.textContent = d;
+        }
+      });
+
+      // Missing placeholder MP3s land here: show a graceful note, stay paused.
+      audio.addEventListener("error", function () {
+        setPlayUI(false);
+        note.hidden = false;
+        setProgress(0);
+      });
+
+      // ---- Progress + seek ----
+      function setProgress(pct) {
+        pct = Math.min(100, Math.max(0, pct));
+        seekFill.style.width = pct + "%";
+        seekKnob.style.left = pct + "%";
+        progMini.style.width = pct + "%";
+        seekEl.setAttribute("aria-valuenow", String(Math.round(pct)));
+        seekEl.setAttribute("aria-valuetext", curEl.textContent + " of " + durEl.textContent);
+      }
+
+      audio.addEventListener("timeupdate", function () {
+        if (seeking || !isFinite(audio.duration) || !audio.duration) return;
+        curEl.textContent = fmt(audio.currentTime);
+        setProgress((audio.currentTime / audio.duration) * 100);
+      });
+
+      function seekFromEvent(e) {
+        var r = seekEl.getBoundingClientRect();
+        var x = (e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX);
+        var ratio = Math.min(1, Math.max(0, (x - r.left) / r.width));
+        if (isFinite(audio.duration) && audio.duration) {
+          audio.currentTime = ratio * audio.duration;
+          curEl.textContent = fmt(audio.currentTime);
+        }
+        setProgress(ratio * 100);
+      }
+
+      seekEl.addEventListener("pointerdown", function (e) {
+        seeking = true;
+        seekEl.classList.add("dragging");
+        seekEl.setPointerCapture(e.pointerId);
+        seekFromEvent(e);
+      });
+      seekEl.addEventListener("pointermove", function (e) { if (seeking) seekFromEvent(e); });
+      seekEl.addEventListener("pointerup",   function ()  { seeking = false; seekEl.classList.remove("dragging"); });
+      seekEl.addEventListener("pointercancel", function () { seeking = false; seekEl.classList.remove("dragging"); });
+
+      seekEl.addEventListener("keydown", function (e) {
+        if (!isFinite(audio.duration) || !audio.duration) return;
+        var step = 0;
+        if (e.key === "ArrowRight" || e.key === "ArrowUp") step = 5;
+        else if (e.key === "ArrowLeft" || e.key === "ArrowDown") step = -5;
+        else if (e.key === "Home") { audio.currentTime = 0; e.preventDefault(); return; }
+        else if (e.key === "End")  { audio.currentTime = audio.duration; e.preventDefault(); return; }
+        else return;
+        audio.currentTime = Math.min(audio.duration, Math.max(0, audio.currentTime + step));
+        curEl.textContent = fmt(audio.currentTime);
+        setProgress((audio.currentTime / audio.duration) * 100);
+        e.preventDefault();
+      });
+
+      // ---- Volume ----
+      function paintVol() {
+        var v = audio.volume;
+        volEl.value = v;
+        volEl.style.background =
+          "linear-gradient(90deg, var(--accent) " + (v * 100) + "%, rgba(243,243,237,.16) " + (v * 100) + "%)";
+        var muted = audio.muted || v === 0;
+        volIcon.style.display = muted ? "none" : "";
+        muteIcon.style.display = muted ? "" : "none";
+        muteBtn.setAttribute("aria-label", muted ? "Unmute" : "Mute");
+      }
+      volEl.addEventListener("input", function () {
+        audio.volume = parseFloat(volEl.value);
+        audio.muted = audio.volume === 0 ? audio.muted : false;
+        paintVol(); persist();
+      });
+      muteBtn.addEventListener("click", function () {
+        audio.muted = !audio.muted;
+        paintVol(); persist();
+      });
+
+      // ---- Expand / collapse ----
+      function openSheet() {
+        lastFocus = document.activeElement;
+        player.classList.add("open");
+        expandBtn.setAttribute("aria-expanded", "true");
+        closeBtn.focus();
+      }
+      function closeSheet() {
+        player.classList.remove("open");
+        expandBtn.setAttribute("aria-expanded", "false");
+        if (lastFocus && lastFocus.focus) lastFocus.focus();
+      }
+      expandBtn.addEventListener("click", function () {
+        if (player.classList.contains("open")) closeSheet(); else openSheet();
+      });
+      $("jkDiscBtn").addEventListener("click", openSheet);
+      closeBtn.addEventListener("click", closeSheet);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && player.classList.contains("open")) closeSheet();
+      });
+
+      playBtns.forEach(function (b) { b.addEventListener("click", toggle); });
+      $("jkPrev").addEventListener("click", prev);
+      $("jkNext").addEventListener("click", next);
+      $("jkPrev2").addEventListener("click", prev);
+      $("jkNext2").addEventListener("click", next);
+
+      // ---- Lock-screen / OS media controls ----
+      function setMediaSession(t) {
+        try {
+          if (!("mediaSession" in navigator)) return;
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: t.title, artist: "Joshua King", album: t.tag
+          });
+          navigator.mediaSession.setActionHandler("play", play);
+          navigator.mediaSession.setActionHandler("pause", pause);
+          navigator.mediaSession.setActionHandler("previoustrack", prev);
+          navigator.mediaSession.setActionHandler("nexttrack", next);
+        } catch (e) {}
+      }
+
+      // ---- Init ----
+      document.body.classList.add("jk-docked");
+      renderList();
+      paintVol();
+      select(idx, false);
+    })();
+  </script>
+  <script>
+    // =====================================================================
+    // Ink-wash About background — a living sumi-e scene behind the About copy.
+    // Canvas-painted: drifting ink blooms, a blossom tree silhouette on a pale
+    // moon-mist, petals loosed from its branches. Scroll-reactive: the scene
+    // breathes and flows as the visitor reads. Pauses offscreen. Reduced
+    // motion renders one static painted frame. All palette: charcoal / ivory /
+    // gold, blurred so the copy stays king.
+    // =====================================================================
+    (function () {
+      "use strict";
+      var section = document.getElementById('about');
+      var canvas = document.getElementById('ink-wash');
+      if (!section || !canvas) return;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var W = 0, H = 0, DPR = 1, mobile = false;
+      var washes = [], branches = [], blossoms = [], petals = [];
+      var running = false, rafId = 0, tPrev = 0;
+      var prog = 0.35;          // smoothed 0..1 read-progress through the section
+      var vel = 0, lastY = 0;   // smoothed scroll velocity -> ink "current"
+
+      // Fixed seed: the composition is art-directed, identical on every load.
+      var seed = 20260917;
+      function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+
+      function resize() {
+        DPR = Math.min(2, window.devicePixelRatio || 1);
+        W = section.clientWidth; H = section.clientHeight;
+        if (!W || !H) return;
+        mobile = W < 640;
+        canvas.width = Math.round(W * DPR);
+        canvas.height = Math.round(H * DPR);
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        build();
+        if (reduceMotion) paint(0, 0); // one beautiful static frame, zero animation
+      }
+
+      function build() {
+        seed = 20260917; // reset so resizes repaint the same scene
+        var i;
+        // --- drifting ink blooms: soft charcoal washes + rare gold mist ---
+        var nW = mobile ? 4 : 7;
+        washes = [];
+        for (i = 0; i < nW; i++) {
+          washes.push({
+            x: rnd() * W, y: rnd() * H,
+            r: (mobile ? 130 : 190) + rnd() * (mobile ? 130 : 230),
+            dx: (rnd() - 0.5) * 0.14, dy: (rnd() - 0.5) * 0.09,
+            ph: rnd() * 6.2832, gold: rnd() > 0.74
+          });
+        }
+        // --- the tree: right-hand side, leaning sumi-e silhouette ---
+        branches = []; blossoms = [];
+        growBranch(W * (mobile ? 0.76 : 0.82), H * 1.03, -Math.PI / 2 + 0.24, H * 0.40, Math.max(14, H * 0.042), 0);
+        // --- petals loosed from the blossom clusters ---
+        petals = [];
+        var nP = mobile ? 5 : 12;
+        for (i = 0; i < nP; i++) petals.push(spawnPetal(true));
+      }
+
+      // Recursive branch: tapered segments; blossom dabs seeded at outer tips.
+      function growBranch(x, y, ang, len, wdt, depth) {
+        var segs = 3, cx = x, cy = y, a = ang, s, k;
+        for (s = 0; s < segs; s++) {
+          var nx = cx + Math.cos(a) * (len / segs);
+          var ny = cy + Math.sin(a) * (len / segs);
+          branches.push({ x0: cx, y0: cy, x1: nx, y1: ny, w: (wdt + wdt * 0.72) / 2, lift: 1 - ny / H });
+          if (depth >= 1 && s === segs - 1) {
+            var n = 4 + Math.floor(rnd() * 4);
+            for (k = 0; k < n; k++) {
+              blossoms.push({ x: nx + (rnd() - 0.5) * 52, y: ny + (rnd() - 0.5) * 40, r: 2.5 + rnd() * 4.5, gold: rnd() < 0.35, ph: rnd() * 6.2832 });
+            }
+          }
+          cx = nx; cy = ny;
+          a += (rnd() - 0.5) * 0.9;
+          wdt *= 0.72;
+        }
+        if (depth < (mobile ? 1 : 2)) {
+          var kids = depth === 0 ? 3 : 2;
+          for (var b = 0; b < kids; b++) {
+            growBranch(cx, cy, a + (rnd() < 0.5 ? -1 : 1) * (0.5 + rnd() * 0.7), len * (0.55 + rnd() * 0.2), wdt, depth + 1);
+          }
+        }
+      }
+
+      function spawnPetal(anyY) {
+        var b = blossoms.length ? blossoms[(rnd() * blossoms.length) | 0] : { x: W * 0.8, y: H * 0.3 };
+        return {
+          x: b.x + (rnd() - 0.5) * 20, y: anyY ? rnd() * H : b.y,
+          vy: 0.22 + rnd() * 0.42, ph: rnd() * 6.2832, sw: 0.6 + rnd() * 1.1,
+          r: 2 + rnd() * 3, rot: rnd() * 6.2832, vr: (rnd() - 0.5) * 0.03,
+          gold: rnd() < 0.4, life: 0, maxLife: 700 + rnd() * 500
+        };
+      }
+
+      function paint(t, dt) {
+        ctx.clearRect(0, 0, W, H);
+        var p = prog, i;
+        var push = Math.max(-2.5, Math.min(2.5, vel * 0.12)); // ink "current" from scroll
+
+        // --- ink washes: breathe + drift, nudged by scroll velocity ---
+        for (i = 0; i < washes.length; i++) {
+          var wsh = washes[i];
+          if (dt > 0) {
+            wsh.x += (wsh.dx * (0.5 + p) + push * 0.6) * dt * 0.06;
+            wsh.y += wsh.dy * dt * 0.06;
+            var m = wsh.r * 2.2; // soft wrap so blooms never pop at edges
+            if (wsh.x < -m) wsh.x += W + m * 2; else if (wsh.x > W + m) wsh.x -= W + m * 2;
+            if (wsh.y < -m) wsh.y += H + m * 2; else if (wsh.y > H + m) wsh.y -= H + m * 2;
+          }
+          var breathe = 1 + Math.sin(t * 0.00021 + wsh.ph) * 0.12;
+          var wr = wsh.r * breathe;
+          var g = ctx.createRadialGradient(wsh.x, wsh.y, 0, wsh.x, wsh.y, wr);
+          if (wsh.gold) {
+            g.addColorStop(0, 'rgba(241,197,47,0.050)');
+            g.addColorStop(1, 'rgba(241,197,47,0)');
+          } else {
+            g.addColorStop(0, 'rgba(96,94,84,0.10)');
+            g.addColorStop(0.6, 'rgba(70,68,60,0.055)');
+            g.addColorStop(1, 'rgba(70,68,60,0)');
+          }
+          ctx.fillStyle = g;
+          ctx.fillRect(wsh.x - wr, wsh.y - wr, wr * 2, wr * 2);
+        }
+
+        // --- pale moon-mist behind the tree; deepens as you read ---
+        var tx = W * 0.82, ty = H * 0.42;
+        var mistA = 0.05 + p * 0.05;
+        var mg = ctx.createRadialGradient(tx, ty, 0, tx, ty, Math.max(W, H) * 0.42);
+        mg.addColorStop(0, 'rgba(243,243,237,' + mistA.toFixed(3) + ')');
+        mg.addColorStop(1, 'rgba(243,243,237,0)');
+        ctx.fillStyle = mg;
+        ctx.fillRect(0, 0, W, H);
+
+        // --- tree silhouette: sways gently, more alive deeper into the read ---
+        var sway = 0.6 + p * 1.4;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = 'rgba(0,0,0,0.55)';
+        ctx.shadowBlur = 14; // soft ink edge
+        ctx.strokeStyle = 'rgba(8,8,7,0.88)';
+        for (i = 0; i < branches.length; i++) {
+          var br = branches[i];
+          var off = Math.sin(t * 0.0009 + br.lift * 2.2) * 7 * sway * br.lift;
+          ctx.lineWidth = Math.max(1, br.w);
+          ctx.beginPath();
+          ctx.moveTo(br.x0 + off * 0.4, br.y0);
+          ctx.lineTo(br.x1 + off, br.y1);
+          ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+
+        // --- blossom clusters: ivory + gold dabs with a barely-there shimmer ---
+        for (i = 0; i < blossoms.length; i++) {
+          var bl = blossoms[i];
+          var tw = 0.40 + Math.sin(t * 0.0013 + bl.ph) * 0.10;
+          ctx.fillStyle = bl.gold
+            ? 'rgba(241,197,47,' + tw.toFixed(3) + ')'
+            : 'rgba(243,243,237,' + (tw + 0.10).toFixed(3) + ')';
+          ctx.beginPath();
+          ctx.ellipse(bl.x, bl.y, bl.r, bl.r * 0.72, bl.ph, 0, 6.2832);
+          ctx.fill();
+        }
+
+        // --- petals loosed from the tree, falling through the read ---
+        for (i = 0; i < petals.length; i++) {
+          var pt = petals[i];
+          if (dt > 0) {
+            pt.life += dt;
+            pt.y += pt.vy * dt * 0.06 * (0.7 + p * 0.6);
+            pt.x += (Math.sin(t * 0.0011 + pt.ph) * pt.sw + push * 0.4) * dt * 0.06;
+            pt.rot += pt.vr * dt * 0.06;
+            if (pt.y > H + 12 || pt.life > pt.maxLife) { petals[i] = spawnPetal(false); continue; }
+          }
+          var fade = Math.min(1, pt.life / 90) * Math.min(1, Math.max(0, (pt.maxLife - pt.life) / 240));
+          var pa = 0.5 * Math.max(0, fade);
+          if (pa <= 0.004) continue;
+          ctx.save();
+          ctx.translate(pt.x, pt.y);
+          ctx.rotate(pt.rot);
+          ctx.fillStyle = pt.gold
+            ? 'rgba(241,197,47,' + pa.toFixed(3) + ')'
+            : 'rgba(240,235,220,' + pa.toFixed(3) + ')';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, pt.r, pt.r * 0.62, 0, 0, 6.2832);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      function frame(now) {
+        if (!running) return;
+        if (document.hidden) { rafId = requestAnimationFrame(frame); return; }
+        var dt = Math.min(50, now - (tPrev || now)); tPrev = now;
+        // smooth read-progress: 0 as the section enters, 1 as it leaves
+        var r = section.getBoundingClientRect();
+        var vh = window.innerHeight || 1;
+        var target = Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height)));
+        prog += (target - prog) * 0.06;
+        // smooth scroll velocity -> the ink drifts with the reader's hand
+        var y = window.scrollY || 0;
+        vel += ((y - lastY) - vel) * 0.12;
+        lastY = y;
+        paint(now, dt || 16);
+        rafId = requestAnimationFrame(frame);
+      }
+
+      var io = new IntersectionObserver(function (entries) {
+        if (reduceMotion) return; // static frame only
+        var vis = entries[0].isIntersecting;
+        if (vis && !running) { running = true; tPrev = 0; rafId = requestAnimationFrame(frame); }
+        else if (!vis && running) { running = false; cancelAnimationFrame(rafId); }
+      }, { threshold: 0.02 });
+      io.observe(section);
+
+      var rzT = 0;
+      window.addEventListener('resize', function () { clearTimeout(rzT); rzT = setTimeout(resize, 200); });
+      lastY = window.scrollY || 0;
+      resize();
+    })();
+
+    // =====================================================================
+    // UI sound effects — 100% synthesized with the WebAudio API, zero assets.
+    // A soft "pop" on buttons, a light "tick" on text links, a low "knock"
+    // on toggles and the music-player controls. Barely-there master gain,
+    // short envelopes, slight pitch wobble so repeats never feel mechanical.
+    // AudioContext is created on the first user gesture (never autoplay) and
+    // everything is guarded: a blocked context can never throw.
+    // =====================================================================
+    (function () {
+      "use strict";
+      var MUTE_KEY = 'jk-sound-muted';
+      var MASTER_GAIN = 0.08; // barely-there
+      var muted = false;
+      try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (e) { muted = false; }
+
+      var actx = null, master = null;
+
+      function ensureCtx() {
+        if (actx) {
+          if (actx.state === 'suspended') { try { actx.resume(); } catch (e) {} }
+          return actx;
+        }
+        try {
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return null;
+          actx = new AC();
+          master = actx.createGain();
+          master.gain.value = MASTER_GAIN;
+          master.connect(actx.destination);
+        } catch (e) { actx = null; master = null; }
+        return actx;
+      }
+
+      // Warm up on the first gesture so the first click already has sound.
+      function warm() { ensureCtx(); }
+      window.addEventListener('pointerdown', warm, { passive: true });
+      window.addEventListener('keydown', warm);
+
+      // One enveloped oscillator: fast attack, exponential decay, no clicks.
+      function tone(freq, dur, type, peak, slideTo) {
+        if (muted) return;
+        var c = ensureCtx();
+        if (!c || !master) return;
+        try {
+          var t = c.currentTime;
+          var f = freq * (1 + (Math.random() - 0.5) * 0.08); // human pitch wobble
+          var o = c.createOscillator(), g = c.createGain();
+          o.type = type;
+          o.frequency.setValueAtTime(Math.max(30, f), t);
+          if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, f * slideTo), t + dur);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(peak, t + 0.006);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          o.connect(g); g.connect(master);
+          o.start(t); o.stop(t + dur + 0.05);
+        } catch (e) { /* a blocked context must never throw */ }
+      }
+
+      function pop()   { tone(520, 0.09, 'triangle', 0.50, 0.62); } // buttons: soft pop
+      function tick()  { tone(2100, 0.035, 'sine', 0.22); }         // text links: light tick
+      function knock() { tone(165, 0.14, 'sine', 0.65, 0.45); }     // toggles / player: low knock
+
+      // One delegated listener (capture): classify the click, never block it.
+      document.addEventListener('click', function (ev) {
+        var el = ev.target instanceof Element ? ev.target : null;
+        if (!el || el.closest('#soundToggle')) return; // the toggle plays its own sound
+        if (el.closest('.jk-player')) { knock(); return; }          // music player controls
+        if (el.closest('summary, button[aria-expanded]')) { knock(); return; } // toggles
+        if (el.closest('button, a.button, a.contact-link')) { pop(); return; } // buttons + CTAs
+        if (el.closest('a[href]')) { tick(); }                       // text links
+      }, true);
+
+      // Mute toggle in the nav; choice persists across visits.
+      var btn = document.getElementById('soundToggle');
+      function render() {
+        if (!btn) return;
+        btn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+        btn.setAttribute('aria-label', muted ? 'Turn interface sounds on' : 'Turn interface sounds off');
+      }
+      if (btn) {
+        render();
+        btn.addEventListener('click', function () {
+          muted = !muted;
+          try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (e) {}
+          render();
+          if (muted) { try { if (actx) actx.suspend(); } catch (e) {} }
+          else { pop(); } // soft confirmation pop on unmute
+        });
+      }
+    })();
+  </script>
+
 </body>
 </html>
