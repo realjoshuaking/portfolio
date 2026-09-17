@@ -351,12 +351,93 @@
       border-radius: 50%;
     }
 
+    /* ---- Intro splash ---- */
+    .splash { display: none; }
+    body.intro { overflow: hidden; }
+    body.intro .splash {
+      display: flex;
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      align-items: center;
+      justify-content: center;
+      background: #10100f;
+      opacity: 0;
+      transition: opacity .5s ease;
+      cursor: pointer;
+    }
+    body.intro .splash.on { opacity: 1; }
+    .splash.leaving {
+      display: flex;
+      opacity: 0 !important;
+      filter: blur(12px);
+      transition: opacity 1s ease, filter 1s ease;
+    }
+    #blossom { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .splash-inner { position: relative; text-align: center; padding: 0 24px; max-width: 940px; }
+    .splash-kicker {
+      margin: 0;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      letter-spacing: .42em;
+      text-indent: .42em;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0;
+      animation: splashFade .9s ease .2s forwards;
+    }
+    .splash-line {
+      margin: 22px 0 0;
+      font-size: clamp(40px, 7.2vw, 92px);
+      line-height: 1.04;
+      letter-spacing: -.045em;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .splash-line > span {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(28px);
+      filter: blur(8px);
+      animation: splashWord 1s cubic-bezier(.19,.7,.22,1) forwards;
+    }
+    .splash-line > span:nth-child(1) { animation-delay: .45s; }
+    .splash-line > span:nth-child(2) { animation-delay: .58s; }
+    .splash-line > span:nth-child(3) { animation-delay: .71s; }
+    .splash-line > span:nth-child(4) { animation-delay: .84s; }
+    .splash-line em { color: var(--accent); font-style: normal; }
+    @keyframes splashWord { to { opacity: 1; transform: none; filter: blur(0); } }
+    @keyframes splashFade { to { opacity: 1; } }
+    .splash-rule {
+      display: block;
+      width: 76px;
+      height: 1px;
+      margin: 36px auto 0;
+      background: var(--accent);
+      opacity: 0;
+      transform: scaleX(0);
+      animation: splashRule 1.1s cubic-bezier(.19,.7,.22,1) 1.05s forwards;
+    }
+    @keyframes splashRule { to { opacity: .85; transform: scaleX(1); } }
+    body.intro header.topbar,
+    body.intro main,
+    body.intro footer.wrap { filter: blur(18px); }
+    header.topbar, main, footer.wrap { transition: filter 1.15s ease; }
+
     /* ---- Scroll-driven dissolve between sections ---- */
     main section { transition: opacity .8s ease, filter .8s ease, transform .8s ease; }
     main section.dissolving { opacity: .12 !important; filter: blur(8px) !important; transform: translateY(-18px) !important; }
   </style>
 </head>
 <body>
+  <div class="splash" id="splash" role="presentation" aria-hidden="true">
+    <canvas id="blossom" aria-hidden="true"></canvas>
+    <div class="splash-inner">
+      <p class="splash-kicker">Joshua King</p>
+      <p class="splash-line"><span>Every</span> <span>story</span> <span>deserves</span> <span>a&nbsp;<em>score.</em></span></p>
+      <span class="splash-rule" aria-hidden="true"></span>
+    </div>
+  </div>
   <div class="grain" aria-hidden="true"></div>
   <canvas id="bg-art" aria-hidden="true"></canvas>
   <header class="wrap topbar">
@@ -858,6 +939,251 @@
           requestAnimationFrame(loop);
         })(last);
       }
+    })();
+
+    // Intro splash: bonsai cherry blossoms that dissolve into the page
+    // (skipped entirely for reduced motion or no-JS: the splash stays hidden)
+    (function () {
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var splash = document.getElementById('splash');
+      if (reduced || !splash) return;
+      var canvas = document.getElementById('blossom');
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      var body = document.body;
+      var root = document.documentElement;
+      var prevOverflow = root.style.overflow;
+      body.classList.add('intro');
+      root.style.overflow = 'hidden';
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { splash.classList.add('on'); });
+      });
+
+      var W = 0, H = 0, DPR = 1;
+      var tree = document.createElement('canvas');
+      var tctx = tree.getContext('2d');
+      var petals = [];
+      var raf = 0, start = 0, last = 0;
+      var leaving = false, leaveAt = 0, finished = false;
+
+      var HOLD_MS = 2500;  // calm moment before the dissolve begins
+      var OUT_MS = 1150;   // teardown shortly after the dissolve starts
+
+      function rnd(a, b) { return a + Math.random() * (b - a); }
+      function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+      var PETAL_COLORS = ['233,201,130', '238,224,188', '226,186,105'];
+
+      // Tapered limb drawn as a filled strip along a quadratic curve
+      function tapered(g, x1, y1, cx, cy, x2, y2, w1, w2, fill) {
+        var segs = 16, i, t, mt, x, y, dx, dy, l, hw;
+        var left = [], right = [];
+        for (i = 0; i <= segs; i++) {
+          t = i / segs; mt = 1 - t;
+          x = mt * mt * x1 + 2 * mt * t * cx + t * t * x2;
+          y = mt * mt * y1 + 2 * mt * t * cy + t * t * y2;
+          dx = 2 * mt * (cx - x1) + 2 * t * (x2 - cx);
+          dy = 2 * mt * (cy - y1) + 2 * t * (y2 - cy);
+          l = Math.hypot(dx, dy) || 1;
+          hw = (w1 + (w2 - w1) * t) / 2;
+          left.push([x - dy / l * hw, y + dx / l * hw]);
+          right.push([x + dy / l * hw, y - dx / l * hw]);
+        }
+        g.beginPath();
+        g.moveTo(left[0][0], left[0][1]);
+        for (i = 1; i <= segs; i++) g.lineTo(left[i][0], left[i][1]);
+        for (i = segs; i >= 0; i--) g.lineTo(right[i][0], right[i][1]);
+        g.closePath();
+        g.fillStyle = fill;
+        g.fill();
+      }
+
+      function blossomDot(g, x, y, r, a) {
+        var k, an;
+        g.fillStyle = 'rgba(233,201,130,' + a.toFixed(2) + ')';
+        for (k = 0; k < 5; k++) {
+          an = (k / 5) * Math.PI * 2 + rnd(0, 0.6);
+          g.beginPath();
+          g.arc(x + Math.cos(an) * r * 0.85, y + Math.sin(an) * r * 0.85, r * 0.62, 0, Math.PI * 2);
+          g.fill();
+        }
+        g.fillStyle = 'rgba(240,228,196,' + Math.min(1, a + 0.15).toFixed(2) + ')';
+        g.beginPath();
+        g.arc(x, y, r * 0.45, 0, Math.PI * 2);
+        g.fill();
+      }
+
+      // Layered dark foliage pad with sparse blossoms, bonsai-pruned look
+      function cloud(g, x, y, rx, ry) {
+        var puffs = [[0, 0, 1], [-0.55, 0.18, 0.72], [0.55, 0.16, 0.7], [-0.15, -0.42, 0.66], [0.28, -0.34, 0.58]];
+        g.fillStyle = 'rgba(43,47,36,0.92)';
+        for (var i = 0; i < puffs.length; i++) {
+          g.beginPath();
+          g.ellipse(x + puffs[i][0] * rx, y + puffs[i][1] * ry, puffs[i][2] * rx, puffs[i][2] * ry * 0.72, 0, 0, Math.PI * 2);
+          g.fill();
+        }
+        var n = 12 + Math.floor(rnd(0, 6)), j;
+        for (j = 0; j < n; j++) {
+          blossomDot(g, x + rnd(-0.95, 0.95) * rx, y + rnd(-0.6, 0.45) * ry, rnd(1.6, 3.1), rnd(0.35, 0.8));
+        }
+      }
+
+      function renderTree() {
+        tree.width = Math.max(1, Math.floor(W * DPR));
+        tree.height = Math.max(1, Math.floor(H * DPR));
+        var g = tctx;
+        g.setTransform(DPR, 0, 0, DPR, 0, 0);
+        g.clearRect(0, 0, W, H);
+        var small = W < 640;
+        var s = small ? 0.72 : 1;
+        var bx = W * (small ? 0.88 : 0.80), by = H * 1.06;
+        g.save();
+        g.globalAlpha = small ? 0.75 : 0.95;
+        var aura = g.createRadialGradient(bx - W * 0.10, H * 0.58, 10, bx - W * 0.10, H * 0.58, W * 0.30);
+        aura.addColorStop(0, 'rgba(241,197,47,0.06)');
+        aura.addColorStop(1, 'rgba(241,197,47,0)');
+        g.fillStyle = aura;
+        g.fillRect(0, 0, W, H);
+
+        var bark = '#221d14';
+        // trunk: chained tapered segments with a gentle bonsai S-curve
+        tapered(g, bx, by, bx + 26 * s, H * 0.82, bx - 34 * s, H * 0.66, 44 * s, 26 * s, bark);
+        tapered(g, bx - 34 * s, H * 0.66, bx - 70 * s, H * 0.58, bx - 96 * s, H * 0.47, 26 * s, 15 * s, bark);
+        tapered(g, bx - 96 * s, H * 0.47, bx - 116 * s, H * 0.40, bx - 118 * s, H * 0.33, 15 * s, 7 * s, bark);
+        // asymmetric branches
+        tapered(g, bx - 22 * s, H * 0.74, bx - 130 * s, H * 0.74, bx - 210 * s, H * 0.66, 15 * s, 6 * s, bark);
+        tapered(g, bx - 62 * s, H * 0.585, bx + 30 * s, H * 0.55, bx + 96 * s, H * 0.47, 12 * s, 5 * s, bark);
+        tapered(g, bx - 92 * s, H * 0.50, bx - 170 * s, H * 0.52, bx - 246 * s, H * 0.46, 11 * s, 5 * s, bark);
+        tapered(g, bx - 108 * s, H * 0.42, bx - 160 * s, H * 0.36, bx - 208 * s, H * 0.30, 9 * s, 4 * s, bark);
+        tapered(g, bx - 118 * s, H * 0.335, bx - 128 * s, H * 0.28, bx - 122 * s, H * 0.235, 7 * s, 3 * s, bark);
+        // foliage clouds at the branch tips
+        cloud(g, bx - 224 * s, H * 0.635, 64 * s, 26 * s);
+        cloud(g, bx + 104 * s, H * 0.45, 52 * s, 22 * s);
+        cloud(g, bx - 258 * s, H * 0.44, 58 * s, 24 * s);
+        cloud(g, bx - 216 * s, H * 0.285, 50 * s, 21 * s);
+        cloud(g, bx - 122 * s, H * 0.215, 40 * s, 17 * s);
+        // a few blossoms drifting free near the canopy
+        for (var i = 0; i < 14; i++) {
+          blossomDot(g, bx + rnd(-260, 130) * s, H * rnd(0.25, 0.62), rnd(1.4, 2.4), rnd(0.25, 0.55));
+        }
+        g.restore();
+      }
+
+      function spawnPetal(anywhere) {
+        var nearTree = Math.random() < 0.45;
+        return {
+          bx: nearTree ? rnd(W * 0.45, W * 0.95) : rnd(0, W),
+          y: anywhere ? rnd(-H * 0.2, H) : rnd(-40, -10),
+          s: rnd(2.6, 6.2),
+          rot: rnd(0, Math.PI * 2),
+          spin: rnd(-1.6, 1.6),
+          fall: rnd(24, 58),
+          ph: rnd(0, Math.PI * 2),
+          swayF: rnd(0.6, 1.6),
+          amp: rnd(14, 46),
+          a: rnd(0.28, 0.62),
+          col: pick(PETAL_COLORS),
+          vx: 0, vy: 0
+        };
+      }
+
+      function drawPetal(p, fade) {
+        var s = p.s, al = Math.max(0, p.a * fade);
+        if (al <= 0.004) return;
+        ctx.save();
+        ctx.translate(p.bx + Math.sin(p.ph) * p.amp * (leaving ? 0.3 : 1), p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = 'rgba(' + p.col + ',' + al.toFixed(3) + ')';
+        ctx.beginPath();
+        ctx.moveTo(0, -s);
+        ctx.quadraticCurveTo(s * 0.95, -s * 0.3, 0, s);
+        ctx.quadraticCurveTo(-s * 0.95, -s * 0.3, 0, -s);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function beginLeave() {
+        if (leaving) return;
+        leaving = true;
+        leaveAt = performance.now() - start;
+        splash.classList.add('leaving');
+        body.classList.remove('intro'); // page sharpens from blur as the splash dissolves
+        var i, p, ang, sp;
+        for (i = 0; i < petals.length; i++) {
+          p = petals[i];
+          ang = Math.atan2(p.y - H * 0.45, p.bx - W * 0.5) + rnd(-0.45, 0.45);
+          sp = rnd(70, 240);
+          p.vx = Math.cos(ang) * sp;
+          p.vy = Math.sin(ang) * sp - 70;
+        }
+        setTimeout(teardown, OUT_MS);
+      }
+
+      function teardown() {
+        if (finished) return;
+        finished = true;
+        cancelAnimationFrame(raf);
+        splash.style.display = 'none';
+        root.style.overflow = prevOverflow;
+        window.removeEventListener('resize', onResize);
+        window.removeEventListener('keydown', onKey);
+      }
+
+      function onKey(e) {
+        if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          beginLeave();
+        }
+      }
+
+      function onResize() {
+        DPR = Math.min(2, window.devicePixelRatio || 1);
+        W = window.innerWidth;
+        H = window.innerHeight;
+        canvas.width = Math.max(1, Math.floor(W * DPR));
+        canvas.height = Math.max(1, Math.floor(H * DPR));
+        renderTree();
+      }
+
+      function frame(now) {
+        if (finished) return;
+        if (!start) { start = now; last = now; }
+        var dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        var el = now - start;
+        if (!leaving && el >= HOLD_MS) beginLeave();
+
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+        ctx.drawImage(tree, 0, 0, W, H);
+
+        var fade = leaving ? Math.max(0, 1 - (el - leaveAt) / (OUT_MS * 0.9)) : 1;
+        for (var i = 0; i < petals.length; i++) {
+          var p = petals[i];
+          if (leaving) {
+            p.bx += p.vx * dt;
+            p.y += p.vy * dt;
+            p.rot += p.spin * 2.2 * dt;
+            p.vx *= (1 - dt * 0.6);
+            p.vy *= (1 - dt * 0.6);
+          } else {
+            p.y += p.fall * dt;
+            p.ph += p.swayF * dt;
+            p.rot += p.spin * dt;
+            if (p.y > H + 20) petals[i] = spawnPetal(false);
+          }
+          drawPetal(petals[i], fade);
+        }
+        raf = requestAnimationFrame(frame);
+      }
+
+      splash.addEventListener('click', beginLeave);
+      window.addEventListener('keydown', onKey);
+      window.addEventListener('resize', onResize);
+      onResize();
+      var count = W < 640 ? 34 : 54, i;
+      for (i = 0; i < count; i++) petals.push(spawnPetal(true));
+      raf = requestAnimationFrame(frame);
     })();
   </script>
 </body>
