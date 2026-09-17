@@ -8,14 +8,15 @@ placed in THIS folder (`audio/` next to `index.html`).
 
 | # | File | Track |
 |---|------|-------|
-| 1 | `girl-named-nova-remix.mp3` | Until I See You Again (Girl Named Nova · Tokens Misplaced remix — remix contest winner) |
-| 2 | `flash.mp3` | FLASH (pop single, 2025) |
-| 3 | `psychic.mp3` | Psychic (alternative pop single) |
-| 4 | `violets-smile.mp3` | Violet's Smile (cinematic pop, 2022) |
-| 5 | `zenith.mp3` | ZENITH (cinematic electronic single) |
-| 6 | `blue-flowers.mp3` | Blue Flowers (from the *Blue Flowers* lo-fi EP, 2020) |
-| 7 | `legato.mp3` | Legato (selection from the *Legato* orchestral album, 2026) |
-| 8 | `beneath-the-moon.mp3` | Beneath the Moon (bossa nova / salsa single) |
+| 1 | `flash.mp3` | FLASH (pop single, 2025) |
+| 2 | `the-barrel.mp3` | The Barrel (Markiplier × Schmoyoho collab, 2020) |
+| 3 | `girl-named-nova-remix.mp3` | Until I See You Again (Girl Named Nova · Tokens Misplaced remix — remix contest winner) |
+| 4 | `psychic.mp3` | Psychic (alternative pop single) |
+| 5 | `violets-smile.mp3` | Violet's Smile (cinematic pop, 2022) |
+| 6 | `zenith.mp3` | ZENITH (cinematic electronic single) |
+| 7 | `blue-flowers.mp3` | Blue Flowers (from the *Blue Flowers* lo-fi EP, 2020) |
+| 8 | `legato.mp3` | A Winding Valley (from the *Legato* orchestral album, 2026) |
+| 9 | `beneath-the-moon.mp3` | Beneath the Moon (bossa nova / salsa single) |
 
 ## Notes
 
