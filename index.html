@@ -333,6 +333,7 @@
 
     /* ---- Dark ambient background art ---- */
     #bg-art { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    #petals { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
     main, header.topbar, footer.wrap { position: relative; z-index: 1; }
     .grain { opacity: .07; }
     .wave-canvas { opacity: .55; }
@@ -442,6 +443,7 @@
   </div>
   <div class="grain" aria-hidden="true"></div>
   <canvas id="bg-art" aria-hidden="true"></canvas>
+  <canvas id="petals" aria-hidden="true"></canvas>
   <header class="wrap topbar">
     <a class="identity" href="#top" aria-label="Joshua King, back to top">Joshua King</a>
     <nav class="nav" aria-label="Primary navigation">
@@ -1190,6 +1192,168 @@
       var count = W < 640 ? 34 : 54, i;
       for (i = 0; i < count; i++) petals.push(spawnPetal(true));
       raf = requestAnimationFrame(frame);
+    })();
+
+    // Ambient petals: a sparse, softly-blurred drift of petals behind the content.
+    // Gold over dark sections, melting into smoky grey over light sections.
+    (function () {
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var canvas = document.getElementById('petals');
+      if (reduced || !canvas) return;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      var W = 0, H = 0, DPR = 1;
+      var STEPS = 10;
+      var GOLD = [233, 201, 130];
+      var SMOKE = [76, 72, 64];
+      var sprites = [];
+      var petals = [];
+      var zones = [];
+      var zonesQueued = false;
+
+      function rnd(a, b) { return a + Math.random() * (b - a); }
+      function mix(a, b, t) {
+        return [Math.round(a[0] + (b[0] - a[0]) * t),
+                Math.round(a[1] + (b[1] - a[1]) * t),
+                Math.round(a[2] + (b[2] - a[2]) * t)];
+      }
+
+      // Prerender soft petal sprites with the blur baked in (cheap per-frame draws)
+      function makeSprites() {
+        sprites = [];
+        var S = 64;
+        for (var s = 0; s < STEPS; s++) {
+          var t = s / (STEPS - 1);
+          var c = mix(GOLD, SMOKE, t);
+          var cv = document.createElement('canvas');
+          cv.width = cv.height = Math.max(1, Math.round(S * DPR));
+          var g = cv.getContext('2d');
+          g.scale(DPR, DPR);
+          g.translate(S / 2, S / 2);
+          try { g.filter = 'blur(2px)'; } catch (e) {}
+          var r = S * 0.20;
+          g.fillStyle = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+          g.beginPath();
+          g.moveTo(0, -r);
+          g.quadraticCurveTo(r * 0.95, -r * 0.3, 0, r);
+          g.quadraticCurveTo(-r * 0.95, -r * 0.3, 0, -r);
+          g.fill();
+          sprites.push(cv);
+        }
+      }
+
+      function spawn(anywhere) {
+        return {
+          bx: rnd(0, W),
+          y: anywhere ? rnd(0, H) : rnd(-40, -12),
+          size: rnd(8, 15),
+          rot: rnd(0, Math.PI * 2),
+          spin: rnd(-0.6, 0.6),
+          fall: rnd(13, 32),
+          ph: rnd(0, Math.PI * 2),
+          swayF: rnd(0.35, 0.9),
+          amp: rnd(12, 34),
+          drift: rnd(-6, 6),
+          alpha: rnd(0.20, 0.38),
+          blend: 0,
+          blendTarget: 0
+        };
+      }
+
+      function lum(rgb) { return (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255; }
+
+      function effectiveBg(el) {
+        while (el && el !== document.documentElement) {
+          var bg = window.getComputedStyle(el).backgroundColor;
+          var m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/.exec(bg);
+          if (m) {
+            var a = (m[4] === undefined) ? 1 : parseFloat(m[4]);
+            if (a > 0.05) return [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)];
+          }
+          el = el.parentElement;
+        }
+        return [16, 16, 15];
+      }
+
+      function refreshZones() {
+        zonesQueued = false;
+        zones = [];
+        var els = document.querySelectorAll('main section, main .contact-panel, footer');
+        for (var i = 0; i < els.length; i++) {
+          var r = els[i].getBoundingClientRect();
+          if (r.bottom < -160 || r.top > H + 160) continue;
+          zones.push({
+            top: r.top, bottom: r.bottom, h: Math.max(1, r.bottom - r.top),
+            light: lum(effectiveBg(els[i])) > 0.55
+          });
+        }
+      }
+
+      function queueZones() {
+        if (zonesQueued) return;
+        zonesQueued = true;
+        requestAnimationFrame(refreshZones);
+      }
+
+      // most specific (smallest) zone containing viewport y
+      function targetBlend(y) {
+        var best = null;
+        for (var i = 0; i < zones.length; i++) {
+          var z = zones[i];
+          if (y >= z.top && y <= z.bottom && (!best || z.h < best.h)) best = z;
+        }
+        return (best && best.light) ? 1 : 0;
+      }
+
+      var last = 0, tick = 0;
+      function frame(now) {
+        var dt = Math.min(0.05, (now - (last || now)) / 1000) || 0.016;
+        last = now;
+        tick++;
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+        var check = (tick % 6 === 0);
+        for (var i = 0; i < petals.length; i++) {
+          var p = petals[i];
+          p.y += p.fall * dt;
+          p.ph += p.swayF * dt;
+          p.rot += p.spin * dt;
+          p.bx += p.drift * dt;
+          if (p.bx > W + 24) p.bx = -24;
+          else if (p.bx < -24) p.bx = W + 24;
+          if (p.y > H + 24) { p.y = rnd(-40, -12); p.bx = rnd(0, W); }
+          if (check) p.blendTarget = targetBlend(p.y);
+          p.blend += (p.blendTarget - p.blend) * Math.min(1, dt * 1.6);
+          var si = Math.max(0, Math.min(STEPS - 1, Math.round(p.blend * (STEPS - 1))));
+          ctx.save();
+          ctx.translate(p.bx + Math.sin(p.ph) * p.amp, p.y);
+          ctx.rotate(p.rot);
+          ctx.globalAlpha = p.alpha;
+          var sz = p.size;
+          ctx.drawImage(sprites[si], -sz / 2, -sz / 2, sz, sz);
+          ctx.restore();
+        }
+        requestAnimationFrame(frame);
+      }
+
+      function resize() {
+        DPR = Math.min(2, window.devicePixelRatio || 1);
+        W = window.innerWidth;
+        H = window.innerHeight;
+        canvas.width = Math.max(1, Math.floor(W * DPR));
+        canvas.height = Math.max(1, Math.floor(H * DPR));
+        makeSprites();
+        queueZones();
+      }
+
+      window.addEventListener('resize', resize);
+      window.addEventListener('scroll', queueZones, { passive: true });
+      resize();
+      refreshZones();
+      var count = W < 640 ? 16 : 28, i;
+      for (i = 0; i < count; i++) petals.push(spawn(true));
+      requestAnimationFrame(frame);
     })();
   </script>
 </body>
