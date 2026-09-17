@@ -1,31 +1,23 @@
-# Jukebox audio assets — NEEDED
+# Jukebox audio
 
-The on-site player ("The Jukebox") in `index.html` is seeded with a
-placeholder playlist. It will stay silent until the real MP3s below are
-placed in THIS folder (`audio/` next to `index.html`).
+MP3s for the homepage Jukebox player on https://realjoshuaking.github.io/portfolio/
 
-## Required files (exact filenames)
+| # | File | Title | Credit |
+|---|------|-------|--------|
+| 1 | flash.mp3 | FLASH | — |
+| 2 | the-barrel.mp3 | The Barrel | with Markiplier + Schmoyoho |
+| 3 | girl-named-nova-remix.mp3 | Until I See You Again | Joshua's remix contest winner (Girl Named Nova / Tokens Misplaced) |
+| 4 | psychic.mp3 | Psychic | — |
+| 5 | violets-smile.mp3 | Violet's Smile | composed for Eva Violet |
+| 6 | zenith.mp3 | ZENITH | — |
+| 7 | blue-flowers.mp3 | Blue Flowers | from the lo-fi EP *Blue Flowers* |
+| 8 | legato-a-winding-valley.mp3 | A Winding Valley | selection from *Legato* (2026) |
+| 9 | beneath-the-moon.mp3 | Beneath the Moon | — |
+| 10 | falling-in-love.mp3 | Falling In Love | Written by Adam King · Composed & produced by Joshua King |
+| 11 | the-world-is-ours.mp3 | The World Is Ours | Original song · Single |
+| 12 | burning-flame.mp3 | Burning Flame | Written by ALIVE · Produced by Joshua King |
+| 13 | feelings.mp3 | Feelings | Written by ALIVE · Produced by Joshua King |
+| 14 | hold-on-me.mp3 | Hold On Me | Written by ALIVE · Produced by Joshua King |
+| 15 | clingy.mp3 | Clingy | Written by ALIVE · Produced by Joshua King |
 
-| # | File | Track |
-|---|------|-------|
-| 1 | `flash.mp3` | FLASH (pop single, 2025) |
-| 2 | `the-barrel.mp3` | The Barrel (Markiplier × Schmoyoho collab, 2020) |
-| 3 | `girl-named-nova-remix.mp3` | Until I See You Again (Girl Named Nova · Tokens Misplaced remix — remix contest winner) |
-| 4 | `psychic.mp3` | Psychic (alternative pop single) |
-| 5 | `violets-smile.mp3` | Violet's Smile (cinematic pop, 2022) |
-| 6 | `zenith.mp3` | ZENITH (cinematic electronic single) |
-| 7 | `blue-flowers.mp3` | Blue Flowers (from the *Blue Flowers* lo-fi EP, 2020) |
-| 8 | `legato.mp3` | A Winding Valley (from the *Legato* orchestral album, 2026) |
-| 9 | `beneath-the-moon.mp3` | Beneath the Moon (bossa nova / salsa single) |
-
-## Notes
-
-- Export as MP3 (320 kbps recommended). The player reads real durations
-  from file metadata automatically; the `duration` strings in the
-  playlist are placeholders and update themselves once files exist.
-- Until the files are added, the player shows a graceful
-  "Fresh from the studio soon" note instead of erroring.
-- Keep filenames lowercase with hyphens exactly as listed — the playlist
-  in `index.html` references them verbatim.
-- To swap, add, or rename tracks, edit the `TRACKS` array at the top of
-  the jukebox `<script>` block in `index.html` (clearly commented).
+Use lowercase, hyphenated filenames. The player reads real durations from MP3 metadata; the `duration` strings in `index.html` are placeholders.
