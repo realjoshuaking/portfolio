@@ -2015,37 +2015,41 @@
         }
       }
 
-      // The canopy: hundreds of blossom dabs in three depth layers, scattered
-      // along the crown's arc and around branch tips. The back layer is
-      // smaller, dimmer, and carries a whisper of scroll parallax.
+      // The canopy: a lush, cloud-like blossom mass in three depth layers,
+      // seeded as dense gaussian clumps around focal points along the crown's
+      // sweeping arc. The arc is a near-continuous blossom band; branches
+      // disappear under blossom mass in places. The back layer is smaller,
+      // dimmer, and carries a whisper of scroll parallax.
       function seedCanopy() {
-        var total = mobile ? 90 : 260;
+        var total = mobile ? 200 : 650;
         var i, k;
         var arc = [];
-        var nArc = mobile ? 5 : 9;
+        var nArc = mobile ? 7 : 14;
         for (i = 0; i < nArc; i++) {
           var f = nArc === 1 ? 0 : i / (nArc - 1);
           arc.push({
-            x: W * (0.78 - f * 0.62) + (rnd() - 0.5) * W * 0.06,
-            y: H * (0.30 - f * 0.10) + (rnd() - 0.5) * H * 0.08,
-            r: (mobile ? 46 : 84) * (1 - f * 0.25)
+            x: W * (0.80 - f * 0.68) + (rnd() - 0.5) * W * 0.04,
+            y: H * (0.28 - f * 0.12) + (rnd() - 0.5) * H * 0.05,
+            r: (mobile ? 60 : 110) * (1 - f * 0.22)
           });
         }
         for (k = 0; k < total; k++) {
           var lr = rnd();
-          var layer = lr < 0.30 ? 0 : (lr < 0.68 ? 1 : 2); // back / mid / front
+          var layer = lr < 0.28 ? 0 : (lr < 0.66 ? 1 : 2); // back / mid / front
           var cx, cy, cr;
-          if (rnd() < 0.55) {
+          if (rnd() < 0.72) {
             var a = arc[(rnd() * arc.length) | 0];
             cx = a.x; cy = a.y; cr = a.r;
           } else if (tips.length) {
             var tp = tips[(rnd() * tips.length) | 0];
-            cx = tp.x; cy = tp.y; cr = mobile ? 34 : 52;
-          } else { cx = W * 0.7; cy = H * 0.3; cr = 60; }
-          var ang = rnd() * 6.2832, rr = Math.sqrt(rnd()) * cr;
+            cx = tp.x; cy = tp.y; cr = mobile ? 40 : 62;
+          } else { cx = W * 0.7; cy = H * 0.28; cr = 70; }
+          // gaussian-ish clumping toward the focal center: clouds, not scatter
+          var rr = (rnd() + rnd() + rnd()) / 3 * cr;
+          var ang = rnd() * 6.2832;
           blossoms.push({
-            x: cx + Math.cos(ang) * rr, y: cy + Math.sin(ang) * rr * 0.72,
-            r: (2 + rnd() * 4.2) * (layer === 0 ? 0.72 : 1),
+            x: cx + Math.cos(ang) * rr, y: cy + Math.sin(ang) * rr * 0.70,
+            r: (3 + rnd() * 6) * (layer === 0 ? 0.75 : (layer === 2 ? 1.15 : 1)),
             gold: rnd() < 0.32, rose: rnd() < 0.12, layer: layer,
             ph: rnd() * 6.2832
           });
@@ -2103,9 +2107,11 @@
 
       // The pagoda: a small jewel of dark ink on a rocky outcrop, nestled at
       // the trunk's base. Three tiers of upturned eaves beneath a quiet spire.
+      // It sits slightly left and low of the trunk so it reads in the
+      // whitespace below the copy, never in front of text.
       function drawPagoda(g) {
-        var s = Math.min(W, H) * (mobile ? 0.10 : 0.115);
-        var px = W * 0.68, py = H * 0.74;
+        var s = Math.min(W, H) * (mobile ? 0.11 : 0.128);
+        var px = W * 0.635, py = H * 0.79;
         var i, tI;
         g.save();
         g.lineJoin = 'round'; g.lineCap = 'round';
@@ -2219,15 +2225,24 @@
         // --- the canopy: blossoms in three depth layers, back layer parallaxes ---
         for (i = 0; i < blossoms.length; i++) {
           var bl = blossoms[i];
-          var tw = 0.40 + Math.sin(t * 0.0013 + bl.ph) * 0.10;
+          var tw = 0.42 + Math.sin(t * 0.0013 + bl.ph) * 0.10;
           var par = (bl.layer - 1) * p * 10 + push * bl.layer * 0.35;
           var bx = bl.x + par, by = bl.y + (bl.layer - 1) * p * 4;
           var base = bl.rose ? '232,178,190' : (bl.gold ? '241,197,47' : '243,243,237');
-          var ba = bl.rose ? tw * 0.55 : (bl.gold ? tw : tw + 0.10);
-          if (bl.layer === 0) ba *= 0.72; // back layer recedes
+          var ba = bl.rose ? tw * 0.6 : (bl.gold ? tw : tw + 0.08);
+          if (bl.layer === 0) ba *= 0.7; // back layer recedes
           ctx.fillStyle = 'rgba(' + base + ',' + Math.max(0, ba).toFixed(3) + ')';
+          // each blossom is a soft 5-petal cluster, not a round speck
+          var pr = bl.r, pt2, pa2;
+          for (pt2 = 0; pt2 < 5; pt2++) {
+            pa2 = bl.ph + pt2 * 1.2566;
+            ctx.beginPath();
+            ctx.ellipse(bx + Math.cos(pa2) * pr * 0.52, by + Math.sin(pa2) * pr * 0.44,
+                        pr * 0.62, pr * 0.46, pa2, 0, 6.2832);
+            ctx.fill();
+          }
           ctx.beginPath();
-          ctx.ellipse(bx, by, bl.r, bl.r * 0.72, bl.ph, 0, 6.2832);
+          ctx.ellipse(bx, by, pr * 0.5, pr * 0.42, 0, 0, 6.2832);
           ctx.fill();
         }
 
