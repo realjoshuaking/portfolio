@@ -948,7 +948,11 @@
     (function () {
       var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       var splash = document.getElementById('splash');
-      if (reduced || !splash) return;
+      // Once per visit: replay only on the first load of each tab session
+      var seen = false;
+      try { seen = window.sessionStorage.getItem('jk-splash-seen') === '1'; } catch (e) { seen = false; }
+      if (reduced || !splash || seen) return;
+      try { window.sessionStorage.setItem('jk-splash-seen', '1'); } catch (e) {}
       var canvas = document.getElementById('blossom');
       var ctx = canvas.getContext('2d');
       if (!ctx) return;
