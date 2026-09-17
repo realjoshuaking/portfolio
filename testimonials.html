@@ -302,6 +302,8 @@
       .release p { text-align: left; }
       .service-grid { grid-template-columns: 1fr; }
       .service, .service:nth-child(even) { padding: 28px 0 32px; border-left: 0; }
+      .quote { grid-template-columns: 1fr; padding: 36px 0; }
+      .quote-art { max-width: 200px; }
       .about-grid { grid-template-columns: 1fr; }
       .footer-row { align-items: flex-start; flex-direction: column; }
     }
@@ -698,13 +700,19 @@
     .case-grid p strong { color: var(--ink); font-weight: 600; }
 
     /* Testimonials */
-    .quotes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-    .quote { padding: 40px 36px 44px 0; display: flex; flex-direction: column; }
-    .quote + .quote { border-left: 1px solid var(--line); padding-left: 36px; }
-    .quote blockquote { margin: 0 0 auto; font-family: "Cormorant Garamond", Georgia, serif; font-size: 23px; line-height: 1.45; letter-spacing: -.01em; color: var(--ink); }
+    .quotes { display: grid; grid-template-columns: 1fr; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .quote { display: grid; grid-template-columns: 200px 1fr; gap: clamp(24px, 4vw, 48px); padding: 44px 0; margin: 0; align-items: start; }
+    .quote + .quote { border-top: 1px solid var(--line); }
+    .quote-art { aspect-ratio: 1; overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+    .quote-art img { width: 100%; height: 100%; object-fit: cover; }
+    .quote-art.ph { display: flex; align-items: center; justify-content: center; text-align: center; border-style: dashed; border-color: rgba(241, 197, 47, .5); padding: 18px; }
+    .quote-art.ph span { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); line-height: 1.9; }
+    .quote-art.ph span b { display: block; color: var(--accent); font-weight: 500; margin-bottom: 6px; }
+    .quote blockquote { margin: 0; font-family: "Cormorant Garamond", Georgia, serif; font-size: 23px; line-height: 1.45; letter-spacing: -.01em; color: var(--ink); }
     .quote blockquote::before { content: ""; display: block; width: 44px; height: 1px; background: var(--accent); margin-bottom: 22px; }
     .quote cite { display: block; margin-top: 26px; font-style: normal; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted); line-height: 1.7; }
     .quote cite b { color: var(--ink); font-weight: 500; }
+    .quote-track { margin: 14px 0 0; font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
 
     /* Contact */
     .contact-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(48px, 7vw, 96px); align-items: start; }
@@ -824,19 +832,33 @@
       <div class="quotes reveal">
         <!-- JOSHUA: replace each quote, name, and role below with a real client testimonial -->
         <figure class="quote">
-          <span class="ph-tag">Placeholder — replace with a real quote</span>
-          <blockquote>He heard what the project needed before I could put it into words — then delivered something better than what I'd imagined.</blockquote>
-          <cite><b>Client Name</b><br>Role · Project</cite>
+          <div class="quote-art">
+            <img src="artwork/the-barrel.jpg" alt="The Barrel — official artwork" loading="lazy">
+          </div>
+          <div>
+            <span class="ph-tag">Placeholder — replace with a real quote</span>
+            <blockquote>He heard what the project needed before I could put it into words — then delivered something better than what I'd imagined.</blockquote>
+            <cite><b>Client Name</b><br>Role · Project</cite>
+            <p class="quote-track">Associated track — The Barrel</p>
+          </div>
         </figure>
         <figure class="quote">
-          <span class="ph-tag">Placeholder — replace with a real quote</span>
-          <blockquote>Fast, communicative, and the music simply worked. The revision rounds were painless and every note landed.</blockquote>
-          <cite><b>Client Name</b><br>Role · Project</cite>
+          <div class="quote-art ph"><span><b>Song artwork</b>Blue Flowers EP</span></div>
+          <div>
+            <span class="ph-tag">Placeholder — replace with a real quote</span>
+            <blockquote>Fast, communicative, and the music simply worked. The revision rounds were painless and every note landed.</blockquote>
+            <cite><b>Client Name</b><br>Role · Project</cite>
+            <p class="quote-track">Associated track — Blue Flowers</p>
+          </div>
         </figure>
         <figure class="quote">
-          <span class="ph-tag">Placeholder — replace with a real quote</span>
-          <blockquote>Working with Joshua felt like adding a member to the team, not hiring a vendor. He cared about the story as much as we did.</blockquote>
-          <cite><b>Client Name</b><br>Role · Project</cite>
+          <div class="quote-art ph"><span><b>Song artwork</b>Legato</span></div>
+          <div>
+            <span class="ph-tag">Placeholder — replace with a real quote</span>
+            <blockquote>Working with Joshua felt like adding a member to the team, not hiring a vendor. He cared about the story as much as we did.</blockquote>
+            <cite><b>Client Name</b><br>Role · Project</cite>
+            <p class="quote-track">Associated track — Legato</p>
+          </div>
         </figure>
       </div>
 
@@ -1653,10 +1675,10 @@
     })();
 
     // =====================================================================
-    // UI sound effects — 100% synthesized with the WebAudio API, zero assets.
-    // A soft "pop" on buttons, a light "tick" on text links, a low "knock"
-    // on toggles and the music-player controls. Barely-there master gain,
-    // short envelopes, slight pitch wobble so repeats never feel mechanical.
+    // UI sound effects — your own SFX files first, synthesized fallback.
+    // Drop files into sfx/ (see sfx/README.md): pop for buttons, tick for
+    // text links, knock for toggles and the music-player controls. Anything
+    // missing falls back to a soft synthesized tone at barely-there volume.
     // AudioContext is created on the first user gesture (never autoplay) and
     // everything is guarded: a blocked context can never throw.
     // =====================================================================
@@ -1690,7 +1712,47 @@
       window.addEventListener('pointerdown', warm, { passive: true });
       window.addEventListener('keydown', warm);
 
+      // Custom SFX files: if yours loads it plays, otherwise the synth below is the fallback.
+      var SFX_FILES = {
+        pop:   ['sfx/pop.mp3', 'sfx/pop.wav'],     // buttons + CTAs
+        tick:  ['sfx/tick.mp3', 'sfx/tick.wav'],   // text links
+        knock: ['sfx/knock.mp3', 'sfx/knock.wav']  // toggles + music-player controls
+      };
+      var sfxCache = {}; // name -> Audio element once a file proves it loads, null while probing/missing
+
+      function sfxAudio(name) {
+        var hit = sfxCache[name];
+        if (hit !== undefined) return hit; // Audio, or null when still probing / known missing
+        sfxCache[name] = null; // mark as probing so we only try once
+        var cands = SFX_FILES[name] || [], i = 0;
+        (function attempt() {
+          if (i >= cands.length) return; // stays null: no file, synth fallback keeps working
+          var a = new Audio();
+          a.preload = 'auto';
+          a.addEventListener('canplaythrough', function () { sfxCache[name] = a; }, { once: true });
+          a.addEventListener('error', function () { i++; attempt(); }, { once: true });
+          a.src = cands[i];
+        })();
+        return null;
+      }
+
+      function playSfx(name, synthFn) {
+        if (muted) return;
+        var a = sfxAudio(name);
+        if (a) {
+          try {
+            var s = a.cloneNode(); // clone so rapid clicks overlap instead of cutting each other off
+            s.volume = 0.4;        // keep it barely-there, like the synth was
+            var p = s.play();
+            if (p && p.catch) p.catch(function () {});
+            return;
+          } catch (e) { /* fall through to synth */ }
+        }
+        synthFn();
+      }
+
       // One enveloped oscillator: fast attack, exponential decay, no clicks.
+      // Only heard when the matching custom SFX file is absent.
       function tone(freq, dur, type, peak, slideTo) {
         if (muted) return;
         var c = ensureCtx();
@@ -1710,9 +1772,9 @@
         } catch (e) { /* a blocked context must never throw */ }
       }
 
-      function pop()   { tone(520, 0.09, 'triangle', 0.50, 0.62); } // buttons: soft pop
-      function tick()  { tone(2100, 0.035, 'sine', 0.22); }         // text links: light tick
-      function knock() { tone(165, 0.14, 'sine', 0.65, 0.45); }     // toggles / player: low knock
+      function pop()   { playSfx('pop', function () { tone(520, 0.09, 'triangle', 0.50, 0.62); }); }
+      function tick()  { playSfx('tick', function () { tone(2100, 0.035, 'sine', 0.22); }); }
+      function knock() { playSfx('knock', function () { tone(165, 0.14, 'sine', 0.65, 0.45); }); }
 
       // One delegated listener (capture): classify the click, never block it.
       document.addEventListener('click', function (ev) {

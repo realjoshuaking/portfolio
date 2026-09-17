@@ -1651,7 +1651,7 @@
          ------------------------------------------------------------------- */
       var TRACKS = [
         { title: "FLASH",            meta: "Pop · 2025",                    tag: "Single",          src: "audio/flash.mp3",            duration: "3:12" /* placeholder */ },
-        { title: "The Barrel",       meta: "Comedy pop · 2020",            tag: "Single",          src: "audio/the-barrel.mp3",       duration: "3:24" /* placeholder */ },
+        { title: "The Barrel",       meta: "Unus Annus contest winner", tag: "Single",          src: "audio/the-barrel.mp3",       duration: "3:24" /* placeholder */ },
         { title: "Until I See You Again", meta: "Girl Named Nova · Tokens Misplaced remix", tag: "Remix contest winner", src: "audio/girl-named-nova-remix.mp3", duration: "3:56" /* placeholder */ },
         { title: "Psychic",          meta: "Alternative pop",               tag: "Single",          src: "audio/psychic.mp3",          duration: "3:41" /* placeholder */ },
         { title: "Violet\u2019s Smile", meta: "Cinematic pop · 2022",       tag: "Single",          src: "audio/violets-smile.mp3",    duration: "4:05" /* placeholder */ },
@@ -2153,10 +2153,10 @@
     })();
 
     // =====================================================================
-    // UI sound effects — 100% synthesized with the WebAudio API, zero assets.
-    // A soft "pop" on buttons, a light "tick" on text links, a low "knock"
-    // on toggles and the music-player controls. Barely-there master gain,
-    // short envelopes, slight pitch wobble so repeats never feel mechanical.
+    // UI sound effects — your own SFX files first, synthesized fallback.
+    // Drop files into sfx/ (see sfx/README.md): pop for buttons, tick for
+    // text links, knock for toggles and the music-player controls. Anything
+    // missing falls back to a soft synthesized tone at barely-there volume.
     // AudioContext is created on the first user gesture (never autoplay) and
     // everything is guarded: a blocked context can never throw.
     // =====================================================================
@@ -2190,7 +2190,47 @@
       window.addEventListener('pointerdown', warm, { passive: true });
       window.addEventListener('keydown', warm);
 
+      // Custom SFX files: if yours loads it plays, otherwise the synth below is the fallback.
+      var SFX_FILES = {
+        pop:   ['sfx/pop.mp3', 'sfx/pop.wav'],     // buttons + CTAs
+        tick:  ['sfx/tick.mp3', 'sfx/tick.wav'],   // text links
+        knock: ['sfx/knock.mp3', 'sfx/knock.wav']  // toggles + music-player controls
+      };
+      var sfxCache = {}; // name -> Audio element once a file proves it loads, null while probing/missing
+
+      function sfxAudio(name) {
+        var hit = sfxCache[name];
+        if (hit !== undefined) return hit; // Audio, or null when still probing / known missing
+        sfxCache[name] = null; // mark as probing so we only try once
+        var cands = SFX_FILES[name] || [], i = 0;
+        (function attempt() {
+          if (i >= cands.length) return; // stays null: no file, synth fallback keeps working
+          var a = new Audio();
+          a.preload = 'auto';
+          a.addEventListener('canplaythrough', function () { sfxCache[name] = a; }, { once: true });
+          a.addEventListener('error', function () { i++; attempt(); }, { once: true });
+          a.src = cands[i];
+        })();
+        return null;
+      }
+
+      function playSfx(name, synthFn) {
+        if (muted) return;
+        var a = sfxAudio(name);
+        if (a) {
+          try {
+            var s = a.cloneNode(); // clone so rapid clicks overlap instead of cutting each other off
+            s.volume = 0.4;        // keep it barely-there, like the synth was
+            var p = s.play();
+            if (p && p.catch) p.catch(function () {});
+            return;
+          } catch (e) { /* fall through to synth */ }
+        }
+        synthFn();
+      }
+
       // One enveloped oscillator: fast attack, exponential decay, no clicks.
+      // Only heard when the matching custom SFX file is absent.
       function tone(freq, dur, type, peak, slideTo) {
         if (muted) return;
         var c = ensureCtx();
@@ -2210,9 +2250,9 @@
         } catch (e) { /* a blocked context must never throw */ }
       }
 
-      function pop()   { tone(520, 0.09, 'triangle', 0.50, 0.62); } // buttons: soft pop
-      function tick()  { tone(2100, 0.035, 'sine', 0.22); }         // text links: light tick
-      function knock() { tone(165, 0.14, 'sine', 0.65, 0.45); }     // toggles / player: low knock
+      function pop()   { playSfx('pop', function () { tone(520, 0.09, 'triangle', 0.50, 0.62); }); }
+      function tick()  { playSfx('tick', function () { tone(2100, 0.035, 'sine', 0.22); }); }
+      function knock() { playSfx('knock', function () { tone(165, 0.14, 'sine', 0.65, 0.45); }); }
 
       // One delegated listener (capture): classify the click, never block it.
       document.addEventListener('click', function (ev) {
