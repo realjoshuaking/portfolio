@@ -1925,11 +1925,15 @@
   <script>
     // =====================================================================
     // Ink-wash About background — a living sumi-e scene behind the About copy.
-    // Canvas-painted: drifting ink blooms, a blossom tree silhouette on a pale
-    // moon-mist, petals loosed from its branches. Scroll-reactive: the scene
-    // breathes and flows as the visitor reads. Pauses offscreen. Reduced
-    // motion renders one static painted frame. All palette: charcoal / ivory /
-    // gold, blurred so the copy stays king.
+    // Canvas-painted: layered misty mountain ridgelines receding behind,
+    // drifting ink blooms, a small pagoda on a rocky outcrop at the trunk's
+    // base, and a massive cherry canopy sweeping across the top — hundreds
+    // of ivory and champagne-gold blossoms (a whisper of rose blush) in three
+    // depth layers, petals drifting down from the canopy. Scroll-reactive:
+    // read-progress deepens the mist, quickens the petals and sways the
+    // canopy; scroll velocity stirs the ink. Pauses offscreen via
+    // IntersectionObserver. Reduced motion renders one static, art-directed
+    // frame. Palette: charcoal / ivory / gold, softly blurred so copy is king.
     // =====================================================================
     (function () {
       "use strict";
@@ -1941,7 +1945,8 @@
 
       var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       var W = 0, H = 0, DPR = 1, mobile = false;
-      var washes = [], branches = [], blossoms = [], petals = [];
+      var washes = [], branches = [], blossoms = [], petals = [], tips = [];
+      var staticLayer = null; // offscreen: mountains + pagoda + rocks, rebuilt on resize
       var running = false, rafId = 0, tPrev = 0;
       var prog = 0.35;          // smoothed 0..1 read-progress through the section
       var vel = 0, lastY = 0;   // smoothed scroll velocity -> ink "current"
@@ -1959,6 +1964,7 @@
         canvas.height = Math.round(H * DPR);
         ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
         build();
+        renderStatic(); // mountains, pagoda, rocks — painted once per resize
         if (reduceMotion) paint(0, 0); // one beautiful static frame, zero animation
       }
 
@@ -1976,48 +1982,179 @@
             ph: rnd() * 6.2832, gold: rnd() > 0.74
           });
         }
-        // --- the tree: right-hand side, leaning sumi-e silhouette ---
-        branches = []; blossoms = [];
-        growBranch(W * (mobile ? 0.76 : 0.82), H * 1.03, -Math.PI / 2 + 0.24, H * 0.40, Math.max(14, H * 0.042), 0);
-        // --- petals loosed from the blossom clusters ---
+        // --- the tree: trunk rises on the right, crown sweeps left across the top ---
+        branches = []; blossoms = []; tips = [];
+        growBranch(W * 0.80, H * 1.06, -Math.PI / 2 + 0.10, H * 0.46, Math.max(16, H * 0.048), 0);
+        seedCanopy();
+        // --- petals loosed from the canopy, drifting across the section ---
         petals = [];
-        var nP = mobile ? 5 : 12;
+        var nP = mobile ? 16 : 40;
         for (i = 0; i < nP; i++) petals.push(spawnPetal(true));
       }
 
-      // Recursive branch: tapered segments; blossom dabs seeded at outer tips.
+      // Recursive branch: tapered segments with a leftward pull so the crown
+      // sweeps across the top of the section. Terminal tips feed canopy seeding.
       function growBranch(x, y, ang, len, wdt, depth) {
-        var segs = 3, cx = x, cy = y, a = ang, s, k;
+        var segs = 3, cx = x, cy = y, a = ang, s;
         for (s = 0; s < segs; s++) {
           var nx = cx + Math.cos(a) * (len / segs);
           var ny = cy + Math.sin(a) * (len / segs);
           branches.push({ x0: cx, y0: cy, x1: nx, y1: ny, w: (wdt + wdt * 0.72) / 2, lift: 1 - ny / H });
-          if (depth >= 1 && s === segs - 1) {
-            var n = 4 + Math.floor(rnd() * 4);
-            for (k = 0; k < n; k++) {
-              blossoms.push({ x: nx + (rnd() - 0.5) * 52, y: ny + (rnd() - 0.5) * 40, r: 2.5 + rnd() * 4.5, gold: rnd() < 0.35, ph: rnd() * 6.2832 });
-            }
-          }
           cx = nx; cy = ny;
-          a += (rnd() - 0.5) * 0.9;
+          a += (rnd() - 0.5) * 0.8 - 0.18; // gentle leftward pull of the crown
           wdt *= 0.72;
         }
         if (depth < (mobile ? 1 : 2)) {
           var kids = depth === 0 ? 3 : 2;
           for (var b = 0; b < kids; b++) {
-            growBranch(cx, cy, a + (rnd() < 0.5 ? -1 : 1) * (0.5 + rnd() * 0.7), len * (0.55 + rnd() * 0.2), wdt, depth + 1);
+            var dir = rnd() < 0.62 ? -1 : 1; // favor the sweeping side
+            growBranch(cx, cy, a + dir * (0.45 + rnd() * 0.75), len * (0.55 + rnd() * 0.2), wdt, depth + 1);
           }
+        } else {
+          tips.push({ x: cx, y: cy });
+        }
+      }
+
+      // The canopy: hundreds of blossom dabs in three depth layers, scattered
+      // along the crown's arc and around branch tips. The back layer is
+      // smaller, dimmer, and carries a whisper of scroll parallax.
+      function seedCanopy() {
+        var total = mobile ? 90 : 260;
+        var i, k;
+        var arc = [];
+        var nArc = mobile ? 5 : 9;
+        for (i = 0; i < nArc; i++) {
+          var f = nArc === 1 ? 0 : i / (nArc - 1);
+          arc.push({
+            x: W * (0.78 - f * 0.62) + (rnd() - 0.5) * W * 0.06,
+            y: H * (0.30 - f * 0.10) + (rnd() - 0.5) * H * 0.08,
+            r: (mobile ? 46 : 84) * (1 - f * 0.25)
+          });
+        }
+        for (k = 0; k < total; k++) {
+          var lr = rnd();
+          var layer = lr < 0.30 ? 0 : (lr < 0.68 ? 1 : 2); // back / mid / front
+          var cx, cy, cr;
+          if (rnd() < 0.55) {
+            var a = arc[(rnd() * arc.length) | 0];
+            cx = a.x; cy = a.y; cr = a.r;
+          } else if (tips.length) {
+            var tp = tips[(rnd() * tips.length) | 0];
+            cx = tp.x; cy = tp.y; cr = mobile ? 34 : 52;
+          } else { cx = W * 0.7; cy = H * 0.3; cr = 60; }
+          var ang = rnd() * 6.2832, rr = Math.sqrt(rnd()) * cr;
+          blossoms.push({
+            x: cx + Math.cos(ang) * rr, y: cy + Math.sin(ang) * rr * 0.72,
+            r: (2 + rnd() * 4.2) * (layer === 0 ? 0.72 : 1),
+            gold: rnd() < 0.32, rose: rnd() < 0.12, layer: layer,
+            ph: rnd() * 6.2832
+          });
         }
       }
 
       function spawnPetal(anyY) {
-        var b = blossoms.length ? blossoms[(rnd() * blossoms.length) | 0] : { x: W * 0.8, y: H * 0.3 };
+        var b = blossoms.length ? blossoms[(rnd() * blossoms.length) | 0] : { x: W * 0.7, y: H * 0.25 };
         return {
-          x: b.x + (rnd() - 0.5) * 20, y: anyY ? rnd() * H : b.y,
+          x: b.x + (rnd() - 0.5) * 24, y: anyY ? rnd() * H : b.y,
           vy: 0.22 + rnd() * 0.42, ph: rnd() * 6.2832, sw: 0.6 + rnd() * 1.1,
           r: 2 + rnd() * 3, rot: rnd() * 6.2832, vr: (rnd() - 0.5) * 0.03,
-          gold: rnd() < 0.4, life: 0, maxLife: 700 + rnd() * 500
+          gold: rnd() < 0.4, rose: rnd() < 0.1, life: 0, maxLife: 700 + rnd() * 500
         };
+      }
+
+      // Static scenery — mountains, pagoda, rocks — painted once per resize
+      // onto an offscreen layer, so the heavy blur work never runs per-frame.
+      function renderStatic() {
+        staticLayer = document.createElement('canvas');
+        staticLayer.width = canvas.width; staticLayer.height = canvas.height;
+        var g = staticLayer.getContext('2d');
+        if (!g) { staticLayer = null; return; }
+        g.setTransform(DPR, 0, 0, DPR, 0, 0);
+        drawMountains(g);
+        drawPagoda(g);
+      }
+
+      // Misty ridgelines receding behind: soft, low contrast, heavily blurred.
+      function drawMountains(g) {
+        var ridges = mobile ? 2 : 3, r, x;
+        for (r = 0; r < ridges; r++) {
+          var f = ridges === 1 ? 0 : r / (ridges - 1); // 0 farthest -> 1 nearest
+          var baseY = H * (0.13 + f * 0.17);
+          var amp = H * (0.085 - f * 0.02);
+          g.save();
+          g.shadowColor = 'rgba(70,68,60,0.5)';
+          g.shadowBlur = 42;
+          g.fillStyle = 'rgba(96,94,84,' + (0.05 + f * 0.05).toFixed(3) + ')';
+          g.beginPath();
+          g.moveTo(-60, H + 60);
+          g.lineTo(-60, baseY);
+          var step = Math.max(70, W / 12), prevX = -60, prevY = baseY;
+          for (x = 0; x <= W + 60; x += step) {
+            var y = baseY - (0.35 + 0.65 * Math.abs(Math.sin(x * 0.0038 + r * 2.4))) * amp - rnd() * amp * 0.45;
+            g.quadraticCurveTo(prevX + step / 2, Math.min(prevY, y) - amp * 0.18, x, y);
+            prevX = x; prevY = y;
+          }
+          g.lineTo(W + 60, H + 60);
+          g.closePath();
+          g.fill();
+          g.restore();
+        }
+      }
+
+      // The pagoda: a small jewel of dark ink on a rocky outcrop, nestled at
+      // the trunk's base. Three tiers of upturned eaves beneath a quiet spire.
+      function drawPagoda(g) {
+        var s = Math.min(W, H) * (mobile ? 0.10 : 0.115);
+        var px = W * 0.68, py = H * 0.74;
+        var i, tI;
+        g.save();
+        g.lineJoin = 'round'; g.lineCap = 'round';
+        g.shadowColor = 'rgba(0,0,0,0.55)'; g.shadowBlur = 12;
+        var ink = 'rgba(8,8,7,0.88)';
+        // rocky outcrop: angular dark strokes beneath the temple
+        g.strokeStyle = ink;
+        var rocks = [
+          [-1.5, 0.10, -0.4, -0.55], [-0.5, 0.05, 0.7, -0.70],
+          [0.6, 0.12, 1.6, -0.40], [-1.1, 0.28, 1.3, 0.34]
+        ];
+        for (i = 0; i < rocks.length; i++) {
+          var rk = rocks[i];
+          g.lineWidth = s * 0.16;
+          g.beginPath();
+          g.moveTo(px + rk[0] * s, py + rk[1] * s);
+          g.lineTo(px + rk[2] * s, py + rk[3] * s);
+          g.stroke();
+        }
+        // three tiers: upturned eaves over quiet bodies
+        g.fillStyle = ink;
+        var tiers = [
+          { w: 1.30, y: 0.00, bh: 0.34 },
+          { w: 1.02, y: 0.52, bh: 0.30 },
+          { w: 0.76, y: 0.98, bh: 0.26 }
+        ];
+        for (tI = 0; tI < tiers.length; tI++) {
+          var tr = tiers[tI], ry = py - tr.y * s;
+          g.fillRect(px - tr.w * 0.32 * s, ry - tr.bh * s, tr.w * 0.64 * s, tr.bh * s);
+          g.beginPath();
+          g.moveTo(px - tr.w * 0.50 * s, ry + s * 0.02);
+          g.quadraticCurveTo(px - tr.w * 0.30 * s, ry - s * 0.10, px - tr.w * 0.22 * s, ry - s * 0.06);
+          g.lineTo(px + tr.w * 0.22 * s, ry - s * 0.06);
+          g.quadraticCurveTo(px + tr.w * 0.30 * s, ry - s * 0.10, px + tr.w * 0.50 * s, ry + s * 0.02);
+          g.lineTo(px + tr.w * 0.34 * s, ry + s * 0.06);
+          g.lineTo(px - tr.w * 0.34 * s, ry + s * 0.06);
+          g.closePath();
+          g.fill();
+        }
+        // spire
+        g.lineWidth = Math.max(1.5, s * 0.035);
+        g.beginPath();
+        g.moveTo(px, py - 1.24 * s);
+        g.lineTo(px, py - 1.62 * s);
+        g.stroke();
+        g.beginPath();
+        g.arc(px, py - 1.62 * s, s * 0.05, 0, 6.2832);
+        g.fill();
+        g.restore();
       }
 
       function paint(t, dt) {
@@ -2050,8 +2187,11 @@
           ctx.fillRect(wsh.x - wr, wsh.y - wr, wr * 2, wr * 2);
         }
 
-        // --- pale moon-mist behind the tree; deepens as you read ---
-        var tx = W * 0.82, ty = H * 0.42;
+        // --- static scenery: mountains, pagoda, rocks ---
+        if (staticLayer) ctx.drawImage(staticLayer, 0, 0, W, H);
+
+        // --- pale moon-mist over the canopy; deepens as you read ---
+        var tx = W * 0.48, ty = H * 0.24;
         var mistA = 0.05 + p * 0.05;
         var mg = ctx.createRadialGradient(tx, ty, 0, tx, ty, Math.max(W, H) * 0.42);
         mg.addColorStop(0, 'rgba(243,243,237,' + mistA.toFixed(3) + ')');
@@ -2059,7 +2199,7 @@
         ctx.fillStyle = mg;
         ctx.fillRect(0, 0, W, H);
 
-        // --- tree silhouette: sways gently, more alive deeper into the read ---
+        // --- trunk and limbs: sway gently, more alive deeper into the read ---
         var sway = 0.6 + p * 1.4;
         ctx.lineCap = 'round';
         ctx.shadowColor = 'rgba(0,0,0,0.55)';
@@ -2076,19 +2216,22 @@
         }
         ctx.shadowBlur = 0;
 
-        // --- blossom clusters: ivory + gold dabs with a barely-there shimmer ---
+        // --- the canopy: blossoms in three depth layers, back layer parallaxes ---
         for (i = 0; i < blossoms.length; i++) {
           var bl = blossoms[i];
           var tw = 0.40 + Math.sin(t * 0.0013 + bl.ph) * 0.10;
-          ctx.fillStyle = bl.gold
-            ? 'rgba(241,197,47,' + tw.toFixed(3) + ')'
-            : 'rgba(243,243,237,' + (tw + 0.10).toFixed(3) + ')';
+          var par = (bl.layer - 1) * p * 10 + push * bl.layer * 0.35;
+          var bx = bl.x + par, by = bl.y + (bl.layer - 1) * p * 4;
+          var base = bl.rose ? '232,178,190' : (bl.gold ? '241,197,47' : '243,243,237');
+          var ba = bl.rose ? tw * 0.55 : (bl.gold ? tw : tw + 0.10);
+          if (bl.layer === 0) ba *= 0.72; // back layer recedes
+          ctx.fillStyle = 'rgba(' + base + ',' + Math.max(0, ba).toFixed(3) + ')';
           ctx.beginPath();
-          ctx.ellipse(bl.x, bl.y, bl.r, bl.r * 0.72, bl.ph, 0, 6.2832);
+          ctx.ellipse(bx, by, bl.r, bl.r * 0.72, bl.ph, 0, 6.2832);
           ctx.fill();
         }
 
-        // --- petals loosed from the tree, falling through the read ---
+        // --- petals loosed from the canopy, drifting across the section ---
         for (i = 0; i < petals.length; i++) {
           var pt = petals[i];
           if (dt > 0) {
@@ -2104,9 +2247,8 @@
           ctx.save();
           ctx.translate(pt.x, pt.y);
           ctx.rotate(pt.rot);
-          ctx.fillStyle = pt.gold
-            ? 'rgba(241,197,47,' + pa.toFixed(3) + ')'
-            : 'rgba(240,235,220,' + pa.toFixed(3) + ')';
+          var pc = pt.rose ? '232,178,190' : (pt.gold ? '241,197,47' : '240,235,220');
+          ctx.fillStyle = 'rgba(' + pc + ',' + pa.toFixed(3) + ')';
           ctx.beginPath();
           ctx.ellipse(0, 0, pt.r, pt.r * 0.62, 0, 0, 6.2832);
           ctx.fill();
