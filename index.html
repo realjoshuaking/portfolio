@@ -1926,7 +1926,7 @@
     // =====================================================================
     // Ink-wash About background — a living sumi-e scene behind the About copy.
     // Canvas-painted: layered misty mountain ridgelines receding behind,
-    // drifting ink blooms, a small pagoda on a rocky outcrop at the trunk's
+    // drifting ink blooms, falling blossom petals
     // base, and a massive cherry canopy sweeping across the top — hundreds
     // of ivory and champagne-gold blossoms (a whisper of rose blush) in three
     // depth layers, petals drifting down from the canopy. Scroll-reactive:
@@ -1946,7 +1946,7 @@
       var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       var W = 0, H = 0, DPR = 1, mobile = false;
       var washes = [], petals = [];
-      var staticLayer = null; // offscreen: mountains + pagoda + rocks, rebuilt on resize
+      var staticLayer = null; // offscreen: mountains, rebuilt on resize
       var running = false, rafId = 0, tPrev = 0;
       var prog = 0.35;          // smoothed 0..1 read-progress through the section
       var vel = 0, lastY = 0;   // smoothed scroll velocity -> ink "current"
@@ -1964,7 +1964,7 @@
         canvas.height = Math.round(H * DPR);
         ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
         build();
-        renderStatic(); // mountains, pagoda, rocks — painted once per resize
+        renderStatic(); // mountains — painted once per resize
         if (reduceMotion) paint(0, 0); // one beautiful static frame, zero animation
       }
 
@@ -2009,7 +2009,7 @@
         };
       }
 
-      // Static scenery — mountains, pagoda, rocks — painted once per resize
+      // Static scenery — mountains — painted once per resize
       // onto an offscreen layer, so the heavy blur work never runs per-frame.
       function renderStatic() {
         staticLayer = document.createElement('canvas');
@@ -2018,7 +2018,6 @@
         if (!g) { staticLayer = null; return; }
         g.setTransform(DPR, 0, 0, DPR, 0, 0);
         drawMountains(g);
-        drawPagoda(g);
       }
 
       // Misty ridgelines receding behind: soft, low contrast, heavily blurred.
@@ -2047,63 +2046,6 @@
           g.fill();
           g.restore();
         }
-      }
-
-      // The pagoda: a quiet, mist-veiled silhouette of dark ink on a rocky
-      // outcrop — a distant jewel in the washes, never a focal point. It sits
-      // low of the copy in the whitespace, behind the text, barely there.
-      function drawPagoda(g) {
-        var s = Math.min(W, H) * (mobile ? 0.10 : 0.115);
-        var px = W * 0.635, py = H * 0.79;
-        var i, tI;
-        g.save();
-        g.lineJoin = 'round'; g.lineCap = 'round';
-        g.shadowColor = 'rgba(0,0,0,0.40)'; g.shadowBlur = 8;
-        var ink = 'rgba(8,8,7,0.55)';
-        // rocky outcrop: angular dark strokes beneath the temple
-        g.strokeStyle = ink;
-        var rocks = [
-          [-1.5, 0.10, -0.4, -0.55], [-0.5, 0.05, 0.7, -0.70],
-          [0.6, 0.12, 1.6, -0.40], [-1.1, 0.28, 1.3, 0.34]
-        ];
-        for (i = 0; i < rocks.length; i++) {
-          var rk = rocks[i];
-          g.lineWidth = s * 0.16;
-          g.beginPath();
-          g.moveTo(px + rk[0] * s, py + rk[1] * s);
-          g.lineTo(px + rk[2] * s, py + rk[3] * s);
-          g.stroke();
-        }
-        // three tiers: upturned eaves over quiet bodies
-        g.fillStyle = ink;
-        var tiers = [
-          { w: 1.30, y: 0.00, bh: 0.34 },
-          { w: 1.02, y: 0.52, bh: 0.30 },
-          { w: 0.76, y: 0.98, bh: 0.26 }
-        ];
-        for (tI = 0; tI < tiers.length; tI++) {
-          var tr = tiers[tI], ry = py - tr.y * s;
-          g.fillRect(px - tr.w * 0.32 * s, ry - tr.bh * s, tr.w * 0.64 * s, tr.bh * s);
-          g.beginPath();
-          g.moveTo(px - tr.w * 0.50 * s, ry + s * 0.02);
-          g.quadraticCurveTo(px - tr.w * 0.30 * s, ry - s * 0.10, px - tr.w * 0.22 * s, ry - s * 0.06);
-          g.lineTo(px + tr.w * 0.22 * s, ry - s * 0.06);
-          g.quadraticCurveTo(px + tr.w * 0.30 * s, ry - s * 0.10, px + tr.w * 0.50 * s, ry + s * 0.02);
-          g.lineTo(px + tr.w * 0.34 * s, ry + s * 0.06);
-          g.lineTo(px - tr.w * 0.34 * s, ry + s * 0.06);
-          g.closePath();
-          g.fill();
-        }
-        // spire
-        g.lineWidth = Math.max(1.5, s * 0.035);
-        g.beginPath();
-        g.moveTo(px, py - 1.24 * s);
-        g.lineTo(px, py - 1.62 * s);
-        g.stroke();
-        g.beginPath();
-        g.arc(px, py - 1.62 * s, s * 0.05, 0, 6.2832);
-        g.fill();
-        g.restore();
       }
 
       function paint(t, dt) {
@@ -2139,7 +2081,7 @@
           ctx.fillRect(wsh.x - wr, wsh.y - wr, wr * 2, wr * 2);
         }
 
-        // --- static scenery: mist-veiled mountains, distant pagoda, rocks ---
+        // --- static scenery: mist-veiled mountains ---
         if (staticLayer) ctx.drawImage(staticLayer, 0, 0, W, H);
 
         // --- pale mist: the whole scene breathes a little deeper as you read ---
