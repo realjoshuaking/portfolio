@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="102" fill="#10100f"/>
-  <text x="256" y="262" text-anchor="middle" dominant-baseline="central"
-        font-family="Cormorant Garamond, Georgia, 'Times New Roman', serif"
-        font-weight="600" font-size="248" fill="#f1c52f" letter-spacing="8">JK</text>
+  <polygon points="170,340 170,205 228,272 256,168 284,272 342,205 342,340" fill="#f1c52f"/>
+  <rect x="170" y="362" width="172" height="36" rx="16" fill="#f1c52f"/>
 </svg>
