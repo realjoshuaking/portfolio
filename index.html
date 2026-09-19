@@ -273,9 +273,9 @@
     #ink-wash { position: absolute; top: 0; bottom: 0; left: 50%; width: 100vw; height: 100%; transform: translateX(-50%); z-index: 0; pointer-events: none; filter: blur(2.5px); -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 30%, #000 70%, transparent 100%); mask-image: linear-gradient(to right, transparent 0%, #000 30%, #000 70%, transparent 100%); }
     #about .about-grid { position: relative; z-index: 1; }
     /* ---- About portrait: photo dissolves into halftone dots, white dot ripples, slow float, scroll dissolve-in ---- */
-    .portrait { margin: clamp(38px, 5vw, 66px) 0 0; max-width: 400px; opacity: 0; filter: blur(14px);
+    figure.portrait { margin: clamp(38px, 5vw, 66px) 0 0; max-width: 400px; opacity: 0; filter: blur(14px);
       transform: translateY(28px) scale(.985); transition: opacity 1.4s ease, filter 1.4s ease, transform 1.4s ease; }
-    .portrait.in { opacity: 1; filter: blur(0); transform: none; }
+    figure.portrait.in { opacity: 1; filter: blur(0); transform: none; }
     .portrait-float { position: relative; animation: portraitFloat 9s ease-in-out infinite; }
     @keyframes portraitFloat { 0%, 100% { transform: translateY(-9px); } 50% { transform: translateY(9px); } }
     .ripple { position: absolute; inset: -64px; pointer-events: none;
@@ -288,12 +288,12 @@
     .ripple.r2 { animation-delay: 2.33s; }
     .ripple.r3 { animation-delay: 4.66s; }
     @keyframes rippleOut { 0% { transform: scale(.9); opacity: 0; } 12% { opacity: .65; } 100% { transform: scale(1.22); opacity: 0; } }
-    .portrait img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; filter: contrast(1.04);
+    figure.portrait img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; filter: contrast(1.04);
       -webkit-mask-image: url(artwork/portrait-mask.png); mask-image: url(artwork/portrait-mask.png);
       -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
-    @media (max-width: 780px) { .portrait { max-width: 320px; } }
+    @media (max-width: 780px) { figure.portrait { max-width: 320px; } }
     @media (prefers-reduced-motion: reduce) {
-      .portrait { transition: none; }
+      figure.portrait { transition: none; }
       .portrait-float, .ripple { animation: none; }
       .ripple { opacity: .3; }
     }
