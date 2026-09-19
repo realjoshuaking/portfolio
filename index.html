@@ -307,7 +307,7 @@
       background: radial-gradient(circle, rgba(241,197,47,.26), transparent 68%); animation-delay: -11s, -4s; }
     @keyframes blobDrift { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(5%,-7%) scale(1.12); } }
     @keyframes blobMorph { 0%, 100% { border-radius: 42% 58% 61% 39% / 45% 42% 58% 55%; } 50% { border-radius: 58% 42% 39% 61% / 55% 58% 42% 45%; } }
-    @media (max-width: 780px) { figure.portrait { max-width: 320px; } }
+    @media (max-width: 780px) { figure.portrait { max-width: 620px; margin-left: auto; margin-right: auto; } }
     @media (prefers-reduced-motion: reduce) {
       figure.portrait { transition: none; }
       .ci, .blob, .ripple { animation: none; }
@@ -336,7 +336,7 @@
     .contact-panel .button { background: var(--accent); color: #141412; border-color: var(--accent); }
     .contact-panel .button:hover { background: transparent; color: var(--accent); }
     .contact-panel .section-number { color: var(--accent); text-decoration: underline; text-underline-offset: 5px; }
-    @media (max-width: 900px) { .contact-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .contact-grid { grid-template-columns: 1fr; padding: 46px 22px; gap: 38px; } }
     footer { padding: 30px 0 42px; }
     .footer-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; color: var(--muted); font-size: 12px; }
     .footer-links { display: flex; gap: 20px; flex-wrap: wrap; }
