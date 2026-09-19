@@ -290,6 +290,9 @@
     @keyframes rippleOut { 0% { transform: scale(.9); opacity: 0; } 12% { opacity: .65; } 100% { transform: scale(1.22); opacity: 0; } }
     figure.portrait img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; filter: contrast(1.04);
       border-radius: 22px; box-shadow: 0 24px 70px rgba(0,0,0,.55); }
+    .about-media { display: grid; gap: 22px; margin-top: 26px; }
+    .about-media video { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover;
+      border-radius: 22px; box-shadow: 0 24px 70px rgba(0,0,0,.55); }
     @media (max-width: 780px) { figure.portrait { max-width: 320px; } }
     @media (prefers-reduced-motion: reduce) {
       figure.portrait { transition: none; }
@@ -986,6 +989,10 @@
               <div class="ripple r2" aria-hidden="true"></div>
               <div class="ripple r3" aria-hidden="true"></div>
               <img src="artwork/joshua-portrait.jpg" alt="Joshua King, music producer and composer, wearing headphones in a black and white portrait" />
+            </div>
+            <div class="about-media">
+              <video src="artwork/joshua-studio.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Slow pan across Joshua King's studio desk"></video>
+              <img src="artwork/joshua-light.jpg" alt="Joshua King with striped sunlight across his face" loading="lazy" />
             </div>
           </figure>
         </div>
