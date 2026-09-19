@@ -270,8 +270,30 @@
     .tool span:last-child { color: var(--muted); text-align: right; }
     /* ---- Ink-wash About background: canvas sits behind the copy, softly blurred ---- */
     #about { position: relative; overflow: hidden; }
-    #ink-wash { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; filter: blur(2.5px); }
+    #ink-wash { position: absolute; top: 0; bottom: 0; left: 50%; width: 100vw; height: 100%; transform: translateX(-50%); z-index: 0; pointer-events: none; filter: blur(2.5px); -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent); }
     #about .about-grid { position: relative; z-index: 1; }
+    /* ---- About portrait: halftone-dissolve edges, gold dot ripple, slow float, scroll dissolve-in ---- */
+    .portrait { margin: clamp(38px, 5vw, 66px) 0 0; max-width: 400px; opacity: 0; filter: blur(14px);
+      transform: translateY(28px) scale(.985); transition: opacity 1.4s ease, filter 1.4s ease, transform 1.4s ease; }
+    .portrait.in { opacity: 1; filter: blur(0); transform: none; }
+    .portrait-float { position: relative; animation: portraitFloat 9s ease-in-out infinite; }
+    @keyframes portraitFloat { 0%, 100% { transform: translateY(-9px); } 50% { transform: translateY(9px); } }
+    .portrait-halo { position: absolute; inset: -46px; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(255,255,255,.9) 1.7px, transparent 2.6px);
+      background-size: 13px 13px;
+      filter: drop-shadow(0 0 7px rgba(255,255,255,.5));
+      -webkit-mask-image: radial-gradient(ellipse at center, transparent 42%, #000 74%);
+      mask-image: radial-gradient(ellipse at center, transparent 42%, #000 74%);
+      animation: haloRipple 9s ease-in-out infinite; }
+    @keyframes haloRipple { 0%, 100% { transform: scale(1); opacity: .55; } 50% { transform: scale(1.08); opacity: .25; } }
+    .portrait img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; filter: contrast(1.04);
+      -webkit-mask-image: url(artwork/portrait-mask.png); mask-image: url(artwork/portrait-mask.png);
+      -webkit-mask-size: cover; mask-size: cover; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+    @media (max-width: 780px) { .portrait { max-width: 320px; } }
+    @media (prefers-reduced-motion: reduce) {
+      .portrait { transition: none; }
+      .portrait-float, .portrait-halo { animation: none; }
+    }
     /* ---- UI sound toggle (nav) ---- */
     .sound-toggle { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-left: 4px; padding: 0; background: none; border: 0; border-radius: 50%; color: var(--muted); cursor: pointer; }
     .sound-toggle:hover { color: var(--accent); }
@@ -948,6 +970,12 @@
         <div>
           <p class="section-number mono">05 / ABOUT</p>
           <h2>I make music with range and intention.</h2>
+          <figure class="portrait" id="jkPortrait">
+            <div class="portrait-float">
+              <div class="portrait-halo" aria-hidden="true"></div>
+              <img src="artwork/joshua-portrait.jpg" alt="Joshua King, music producer and composer, wearing headphones in a black and white portrait" />
+            </div>
+          </figure>
         </div>
         <div class="about-copy">
           <p>I’m Joshua King, a self-taught music producer and composer with more than eight years of experience. I work across pop, hip-hop, orchestral, R&amp;B, electronic, cinematic, lo-fi, and other genres. That range lets me meet each project where it is instead of forcing it into one sound.</p>
@@ -1988,7 +2016,7 @@
 
       function resize() {
         DPR = Math.min(2, window.devicePixelRatio || 1);
-        W = section.clientWidth; H = section.clientHeight;
+        W = canvas.clientWidth; H = section.clientHeight;
         if (!W || !H) return;
         mobile = W < 640;
         canvas.width = Math.round(W * DPR);
@@ -2178,6 +2206,20 @@
       window.addEventListener('resize', function () { clearTimeout(rzT); rzT = setTimeout(resize, 200); });
       lastY = window.scrollY || 0;
       resize();
+    })();
+
+    // =====================================================================
+    // About portrait: dissolve in on first scroll into view.
+    // =====================================================================
+    (function () {
+      "use strict";
+      var el = document.getElementById('jkPortrait');
+      if (!el) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.classList.add('in'); return; }
+      var io = new IntersectionObserver(function (entries) {
+        if (entries[0].isIntersecting) { el.classList.add('in'); io.disconnect(); }
+      }, { threshold: 0.2 });
+      io.observe(el);
     })();
 
     // =====================================================================
