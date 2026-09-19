@@ -287,10 +287,10 @@
       opacity: 0; animation: rippleOut 7s ease-out infinite; }
     .ripple.r2 { animation-delay: 2.33s; }
     .ripple.r3 { animation-delay: 4.66s; }
-    @keyframes rippleOut { 0% { transform: scale(.9); opacity: 0; } 12% { opacity: .8; } 100% { transform: scale(1.22); opacity: 0; } }
+    @keyframes rippleOut { 0% { transform: scale(.9); opacity: 0; } 12% { opacity: .65; } 100% { transform: scale(1.22); opacity: 0; } }
     .portrait img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; filter: contrast(1.04);
       -webkit-mask-image: url(artwork/portrait-mask.png); mask-image: url(artwork/portrait-mask.png);
-      -webkit-mask-size: cover; mask-size: cover; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+      -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
     @media (max-width: 780px) { .portrait { max-width: 320px; } }
     @media (prefers-reduced-motion: reduce) {
       .portrait { transition: none; }
