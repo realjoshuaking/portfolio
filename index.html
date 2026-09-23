@@ -505,6 +505,8 @@
 
     /* ---- Intro splash ---- */
     .splash { display: none; }
+    /* Reserve the scrollbar gutter so its arrival never shifts the layout. */
+    html { scrollbar-gutter: stable; }
     html.intro { overflow: hidden; }
     html.intro .splash,
     .splash.leaving {
@@ -1503,9 +1505,12 @@
         splash.classList.remove('on');
         // Sharpen the page while the splash dissolves over it.
         root.classList.remove('intro');
-        root.style.overflow = prevOverflow || '';
+        // Keep scroll locked (and the scrollbar hidden) until the fade is
+        // done, so it appears after the intro with no layout shift.
+        root.style.overflow = 'hidden';
         setTimeout(function () {
           splash.style.display = 'none';
+          root.style.overflow = prevOverflow || '';
         }, DISSOLVE_MS + 200);
       }
 
