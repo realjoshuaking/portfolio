@@ -254,6 +254,8 @@
     .service h3 { margin: 0 0 12px; font-size: 24px; letter-spacing: -.025em; }
     .service p { margin: 0; max-width: 440px; font-size: 15px; }
     .about-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(56px, 9vw, 130px); }
+    /* Bio copy always sits above decorative layers so it stays clear to read. */
+    .about-copy { position: relative; z-index: 2; }
     .about-copy p { color: var(--muted); font-size: 17px; line-height: 1.8; margin: 0 0 22px; }
     .human-made {
       margin: 30px 0 34px;
@@ -364,11 +366,16 @@
       .contact-grid { grid-template-columns: 1fr; padding: 46px 22px 0; gap: 30px; }
       .contact-shot { margin: 8px -22px 0; }
       .contact-shot img { border-radius: 22px 22px 0 0; }
-      .car-item { border-radius: 22px 22px 0 0; }
       .car-stage { perspective: 900px; }
-      .car-item[data-slot="left"] { transform: translateX(-40%) translateZ(-180px) rotateY(28deg); }
-      .car-item[data-slot="right"] { transform: translateX(40%) translateZ(-180px) rotateY(-28deg); }
-      .car-item[data-slot="back"] { transform: translateX(0) translateZ(-360px) rotateY(0deg) scale(.72); }
+      /* Mobile: the stage is full-bleed inside an overflow-hidden panel, so side
+         photos cannot peek from outside the stage (they would be clipped away).
+         Instead the front photo becomes a centered card and the side photos peek
+         from the gutters on the left and right, inside the stage. */
+      .car-item { border-radius: 18px; }
+      .car-item[data-slot="front"] { transform: translateX(0%) translateZ(0px) rotateY(0deg) scaleX(.74); }
+      .car-item[data-slot="left"] { transform: translateX(-48%) translateZ(-150px) rotateY(24deg) scaleX(.74); }
+      .car-item[data-slot="right"] { transform: translateX(48%) translateZ(-150px) rotateY(-24deg) scaleX(.74); }
+      .car-item[data-slot="back"] { transform: translateX(0%) translateZ(-300px) rotateY(0deg) scaleX(.6); }
     }
     footer { padding: 30px 0 42px; }
     .footer-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; color: var(--muted); font-size: 12px; }
@@ -481,6 +488,17 @@
       inset: -20px;
       border: 1px solid rgba(241, 197, 47, .30);
       border-radius: 50%;
+    }
+    @media (max-width: 780px) {
+      /* The outer ring is wider than the screen on phones: dissolve it at the
+         edges instead of letting it clip hard against the viewport. */
+      .portrait-rule {
+        -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
+        mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
+      }
+      /* Smaller availability badge on phones. */
+      .availability { left: 8px; bottom: 8px; padding: 6px 9px; font-size: 9px; max-width: 54%; }
+      .availability b { font-size: 10px; }
     }
 
     /* ---- Intro splash ---- */
@@ -1309,7 +1327,9 @@
           if (e.intersectionRatio >= 0.25) {
             seen.add(e.target);
             e.target.classList.remove('dissolving');
-          } else if (e.intersectionRatio < 0.12 && seen.has(e.target)) {
+            // Tall sections (common on phones) must not dissolve while still being read:
+            // only fade when almost nothing of the section remains visible.
+          } else if (e.intersectionRect.height < 120 && seen.has(e.target)) {
             e.target.classList.add('dissolving');
           }
         });
@@ -2352,10 +2372,22 @@
       }
       function stop() { clearInterval(timer); timer = null; }
 
-      root.addEventListener('pointerenter', stop);
+      root.addEventListener('pointerenter', function (e) {
+        // Touch taps also fire pointerenter but (unlike a mouse) may never fire
+        // pointerleave, which would freeze the slideshow on phones. Only a real
+        // mouse hover pauses the rotation.
+        if (e.pointerType === 'mouse') stop();
+      });
       root.addEventListener('pointerleave', start);
-      root.addEventListener('focusin', stop);
-      root.addEventListener('focusout', start);
+      // Keyboard/tap focus pauses briefly, then hands the rotation back on its
+      // own, so a tap can never freeze the slideshow permanently on phones.
+      var resumeT = null;
+      root.addEventListener('focusin', function () {
+        stop();
+        clearTimeout(resumeT);
+        resumeT = setTimeout(start, 8000);
+      });
+      root.addEventListener('focusout', function () { clearTimeout(resumeT); start(); });
       items.forEach(function (item) {
         item.setAttribute('tabindex', '0');
         function bringForward() {
