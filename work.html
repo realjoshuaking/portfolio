@@ -1025,7 +1025,7 @@
           if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
         });
       }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
-      document.querySelectorAll('main section, .hero > div, article.release, article.video-card, .marquee')
+      document.querySelectorAll('main section, .hero > div, article.release, article.video-card, .marquee, .reveal')
         .forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
     })();
 
