@@ -371,11 +371,14 @@
          photos cannot peek from outside the stage (they would be clipped away).
          Instead the front photo becomes a centered card and the side photos peek
          from the gutters on the left and right, inside the stage. */
-      .car-item { border-radius: 18px; }
-      .car-item[data-slot="front"] { transform: translateX(0%) translateZ(0px) rotateY(0deg) scaleX(.74); }
-      .car-item[data-slot="left"] { transform: translateX(-48%) translateZ(-150px) rotateY(24deg) scaleX(.74); }
-      .car-item[data-slot="right"] { transform: translateX(48%) translateZ(-150px) rotateY(-24deg) scaleX(.74); }
-      .car-item[data-slot="back"] { transform: translateX(0%) translateZ(-300px) rotateY(0deg) scaleX(.6); }
+      .car-item { border-radius: 18px; left: 13%; right: 13%;
+        /* Narrow the cards with real width, not scaleX: scaleX(.74) was
+           horizontally squishing the photos on phones. Width keeps them
+           true landscape; object-fit: cover crops, never distorts. */ }
+      .car-item[data-slot="front"] { transform: translateX(0%) translateZ(0px) rotateY(0deg); }
+      .car-item[data-slot="left"] { transform: translateX(-62%) translateZ(-150px) rotateY(24deg); }
+      .car-item[data-slot="right"] { transform: translateX(62%) translateZ(-150px) rotateY(-24deg); }
+      .car-item[data-slot="back"] { transform: translateX(0%) translateZ(-300px) rotateY(0deg) scale(.62); }
     }
     footer { padding: 30px 0 42px; }
     .footer-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; color: var(--muted); font-size: 12px; }
