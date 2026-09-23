@@ -334,6 +334,8 @@
       filter: blur(30px) brightness(.38) saturate(1.15); transform: scale(1.05); }
     .contact-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr;
       gap: clamp(40px, 6vw, 90px); align-items: center; padding: clamp(42px, 7vw, 84px); }
+    /* Keep the contact copy above the 3D slideshow panels, which spill past the photo area. */
+    .contact-copy { position: relative; z-index: 10; }
     .contact-shot { position: relative; margin: 0; }
     .contact-shot img { position: relative; z-index: 1; display: block; width: 100%; border-radius: 22px;
       box-shadow: 0 24px 70px rgba(0,0,0,.55); }
@@ -353,8 +355,6 @@
       filter: blur(4px) brightness(.62); opacity: .9; z-index: 3; cursor: pointer; }
     .car-item[data-slot="back"] { transform: translateX(0) translateZ(-480px) rotateY(0deg) scale(.72);
       filter: blur(9px) brightness(.4); opacity: 0; z-index: 1; pointer-events: none; }
-    .car-hint { position: relative; z-index: 1; margin: 14px 6px 0; font-size: 13px; color: var(--muted);
-      text-align: center; }
     .contact-panel h2 { max-width: 850px; }
     .contact-panel p { max-width: 650px; margin: 24px 0 32px; font-size: 17px; }
     .contact-panel .button { background: var(--accent); color: #141412; border-color: var(--accent); }
@@ -1142,7 +1142,7 @@
       <div class="contact-panel">
         <div class="contact-bg" aria-hidden="true"></div>
         <div class="contact-grid">
-        <div>
+        <div class="contact-copy">
         <p class="section-number mono">AVAILABLE FOR REMOTE COLLABORATION</p>
         <h2>Have a project that needs original music?</h2>
         <p>Tell me about the project, timeline, references, and what you want the audience to feel. I’ll get back to you so we can discuss the right approach.</p>
@@ -1162,7 +1162,6 @@
               <div class="car-item" data-slot="back"><img src="artwork/studio-mixer.jpg" alt="Balancing a track in the FL Studio mixer" loading="lazy"></div>
             </div>
           </div>
-          <p class="car-hint">A look inside recent sessions. Tap a side photo to bring it forward.</p>
         </figure>
         </div>
       </div></section>
