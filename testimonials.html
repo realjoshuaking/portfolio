@@ -85,6 +85,9 @@
     .nav a { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 600; }
     .nav a:hover, .nav a:focus-visible { color: var(--ink); }
     .nav .contact-link { color: var(--ink); }
+    .menu-toggle { display: none; background: none; border: 0; padding: 10px 0; cursor: pointer;
+      color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+    .mobile-menu { display: none; }
     .hero {
       display: grid;
       grid-template-columns: minmax(0, 1.16fr) minmax(340px, .84fr);
@@ -301,7 +304,16 @@
     @media (max-width: 780px) {
       .wrap { width: min(100% - 34px, 1180px); }
       .topbar { min-height: 68px; }
-      .nav a:not(.contact-link) { display: none; }
+      .nav > a:not(.contact-link) { display: none; }
+      .menu-toggle { display: inline-block; }
+      .topbar { position: relative; }
+      .mobile-menu { position: absolute; top: calc(100% + 8px); right: 17px; z-index: 60;
+        min-width: 230px; background: var(--surface); border: 1px solid var(--line);
+        border-radius: 14px; padding: 8px; box-shadow: 0 18px 50px rgba(0,0,0,.55); }
+      .mobile-menu.open { display: block; }
+      .mobile-menu a { display: block; padding: 12px 14px; border-radius: 10px; font-size: 15px; }
+      .mobile-menu a:hover, .mobile-menu a:focus-visible { background: rgba(241,197,47,.08); }
+      .mobile-menu a[aria-current="page"] { color: var(--accent); }
       .hero { grid-template-columns: 1fr; padding: 62px 0 76px; gap: 56px; }
       h1 { font-size: clamp(48px, 14vw, 68px); }
       .hero-visual { width: 100%; max-width: 520px; margin: 0 auto; }
@@ -816,6 +828,7 @@
   <header class="wrap topbar">
     <a class="identity" href="index.html" aria-label="Joshua King — home">Joshua King</a>
     <nav class="nav" aria-label="Primary navigation">
+      <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="mobileMenu">Menu</button>
       <a href="services.html">Services</a>
       <a href="work.html">Work</a>
       <a href="testimonials.html" aria-current="page">Testimonials</a>
@@ -829,8 +842,33 @@
           <line class="slash" x1="2.5" y1="15.5" x2="15.5" y2="2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></line>
         </svg>
       </button>
+          <div class="mobile-menu" id="mobileMenu">
+        <a href="index.html">Home</a>
+        <a href="services.html">Services</a>
+        <a href="work.html">Work</a>
+        <a href="testimonials.html" aria-current="page">Testimonials</a>
+        <a href="epk.html">Press Kit</a>
+        <a href="contact.html">Book a project</a>
+      </div>
     </nav>
   </header>
+  <script>
+    // Mobile menu toggle
+    (function () {
+      var t = document.getElementById('menuToggle');
+      var m = document.getElementById('mobileMenu');
+      if (!t || !m) return;
+      function close() { m.classList.remove('open'); t.setAttribute('aria-expanded', 'false'); }
+      t.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = m.classList.toggle('open');
+        t.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      m.addEventListener('click', function (e) { if (e.target.closest('a')) close(); });
+      document.addEventListener('click', function (e) { if (!m.contains(e.target)) close(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    })();
+  </script>
 
   <main id="top">
     <div class="wrap page-hero">
@@ -844,44 +882,28 @@
         <p class="section-number mono reveal">TESTIMONIALS</p>
         <div class="reveal">
           <h2>In their words.</h2>
-          <p>Real quotes from real collaborators — once they're collected. Below are tasteful stand-ins for layout; they'll be replaced with the genuine article.</p>
+          <p>Real words from real listeners. More coming as they roll in.</p>
         </div>
       </div>
 
       <div class="quotes reveal">
-        <!-- JOSHUA: replace each quote, name, and role below with a real client testimonial -->
         <figure class="quote">
-          <div class="quote-art">
-            <img src="artwork/the-barrel.jpg" alt="The Barrel — official artwork" loading="lazy">
-          </div>
+          <div class="quote-art ph"><span><b>Song artwork</b>Beneath The Moon</span></div>
           <div>
-            <span class="ph-tag">Placeholder — replace with a real quote</span>
-            <blockquote>He heard what the project needed before I could put it into words — then delivered something better than what I'd imagined.</blockquote>
-            <cite><b>Client Name</b><br>Role · Project</cite>
-            <p class="quote-track">Associated track — The Barrel</p>
+            <blockquote>This S#@% should go in a movie.</blockquote>
+            <cite><b>9IGHTLIFE</b><br>TikTok · &ldquo;Beneath The Moon&rdquo;</cite>
+            <p class="quote-track">Associated track — Beneath The Moon</p>
           </div>
         </figure>
         <figure class="quote">
-          <div class="quote-art ph"><span><b>Song artwork</b>Blue Flowers EP</span></div>
+          <div class="quote-art ph"><span><b>Song artwork</b>Flash</span></div>
           <div>
-            <span class="ph-tag">Placeholder — replace with a real quote</span>
-            <blockquote>Fast, communicative, and the music simply worked. The revision rounds were painless and every note landed.</blockquote>
-            <cite><b>Client Name</b><br>Role · Project</cite>
-            <p class="quote-track">Associated track — Blue Flowers</p>
-          </div>
-        </figure>
-        <figure class="quote">
-          <div class="quote-art ph"><span><b>Song artwork</b>Legato</span></div>
-          <div>
-            <span class="ph-tag">Placeholder — replace with a real quote</span>
-            <blockquote>Working with Joshua felt like adding a member to the team, not hiring a vendor. He cared about the story as much as we did.</blockquote>
-            <cite><b>Client Name</b><br>Role · Project</cite>
-            <p class="quote-track">Associated track — Legato</p>
+            <blockquote>Joshua King clearly has experience in this realm. Because that was an insanely well-produced song.</blockquote>
+            <cite><b>Hatake</b><br>TikTok · &ldquo;Flash&rdquo;</cite>
+            <p class="quote-track">Associated track — Flash</p>
           </div>
         </figure>
       </div>
-
-      <p class="ph-note reveal" style="margin-top: 34px;"><span class="ph-tag">How to fill this in</span><br>Ask 3–5 past collaborators for two or three sentences on working with you — most people are happy to oblige when you make it easy. Paste their words here with name, role, and project.</p>
     </section>
 
     <section class="wrap page-cta">
