@@ -640,9 +640,16 @@
   
     /* ---- Sub-page shared additions (Phase 1 expansion) ---- */
     .nav a[aria-current="page"] { color: var(--ink); }
-    .page-hero { padding: clamp(64px, 9vw, 118px) 0 clamp(36px, 4vw, 56px); }
+    .page-hero { position: relative; overflow: hidden; padding: clamp(64px, 9vw, 118px) 0 clamp(36px, 4vw, 56px); }
     .page-hero h1 em { color: var(--accent); font-style: normal; }
     .page-hero .lede { margin-top: 26px; }
+    #hero-flow {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 42%);
+      mask-image: linear-gradient(to right, transparent 0%, #000 42%);
+    }
+    .page-hero > :not(#hero-flow) { position: relative; z-index: 1; }
     .gold-rule { border: 0; height: 1px; background: var(--accent); opacity: .45; margin: 0; }
     .block { padding: clamp(56px, 7vw, 96px) 0; border-top: 1px solid var(--line); }
     .block-head { display: grid; grid-template-columns: 1fr 1.8fr; gap: 42px; align-items: start; margin-bottom: 44px; }
@@ -869,6 +876,7 @@
 
   <main id="top">
     <div class="wrap page-hero">
+      <canvas id="hero-flow" aria-hidden="true"></canvas>
       <p class="eyebrow mono reveal">SERVICES</p>
       <h1 class="reveal">Music, made to <em>measure.</em></h1>
       <p class="lede reveal">Three ways to work together. Whether you need a full original score, a finished record, or the song itself. Every project is human-composed and produced, start to finish. No AI generation, ever.</p>
@@ -1075,32 +1083,58 @@
       document.querySelectorAll('main section').forEach(function (el) { io2.observe(el); });
     })();
 
-    // Decorative animated waveform in the hero
+    // Flowing light ribbons in the hero: abstract, generated live on canvas
     (function () {
-      var c = document.getElementById('wave');
+      var c = document.getElementById('hero-flow');
       if (!c || !c.getContext) return;
       var ctx = c.getContext('2d');
       var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var w = 0, h = 0, t = 0;
+      var dpr = Math.min(1.5, window.devicePixelRatio || 1);
+      var w = 0, h = 0, t = Math.random() * 40;
+      var layers = [
+        { y: 0.30, amp: 0.075, speed: 0.35, wide: 90, alpha: 0.10, phase: 0.0, k: 1.00 },
+        { y: 0.42, amp: 0.095, speed: 0.28, wide: 64, alpha: 0.14, phase: 1.7, k: 0.80 },
+        { y: 0.54, amp: 0.085, speed: 0.42, wide: 44, alpha: 0.18, phase: 3.1, k: 1.20 },
+        { y: 0.66, amp: 0.070, speed: 0.31, wide: 30, alpha: 0.22, phase: 4.4, k: 0.95 },
+        { y: 0.76, amp: 0.060, speed: 0.50, wide: 18, alpha: 0.28, phase: 5.8, k: 1.35 }
+      ];
       function size() {
         var r = c.getBoundingClientRect();
-        w = c.width = Math.max(1, Math.floor(r.width));
-        h = c.height = Math.max(1, Math.floor(r.height));
+        w = c.width = Math.max(1, Math.floor(r.width * dpr));
+        h = c.height = Math.max(1, Math.floor(r.height * dpr));
+      }
+      function yAt(L, x) {
+        var u = x / w;
+        return h * L.y
+          + Math.sin(u * 5.0 * L.k + t * L.speed * 2.0 + L.phase) * h * L.amp
+          + Math.sin(u * 11.0 * L.k - t * L.speed * 1.2 + L.phase * 1.7) * h * L.amp * 0.35;
+      }
+      function strokeLayer(L, lineW, alpha) {
+        ctx.beginPath();
+        var step = Math.max(3 * dpr, w / 260);
+        for (var x = -step; x <= w + step; x += step) {
+          var y = yAt(L, x);
+          if (x <= 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'rgba(240,191,33,' + alpha.toFixed(3) + ')';
+        ctx.lineWidth = lineW;
+        ctx.lineCap = 'round';
+        ctx.stroke();
       }
       function draw() {
         ctx.clearRect(0, 0, w, h);
-        var n = 72, bw = w / n;
-        for (var i = 0; i < n; i++) {
-          var p = (Math.sin(i * 0.32 + t * 1.6) * 0.5 + 0.5) * (Math.sin(i * 0.11 - t * 0.9) * 0.5 + 0.5);
-          var bh = 6 + p * (h * 0.8);
-          var x = i * bw + bw * 0.22, y = h - bh, ww = bw * 0.56;
-          var g = ctx.createLinearGradient(0, y, 0, h);
-          g.addColorStop(0, 'rgba(240,191,33,0.85)');
-          g.addColorStop(1, 'rgba(240,191,33,0.10)');
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          if (ctx.roundRect) ctx.roundRect(x, y, ww, bh, ww / 2); else ctx.rect(x, y, ww, bh);
-          ctx.fill();
+        var gx = w * 0.8, gy = h * 0.52;
+        var gr = Math.max(w, h) * 0.5 * (1 + 0.05 * Math.sin(t * 0.6));
+        var glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
+        glow.addColorStop(0, 'rgba(240,191,33,0.10)');
+        glow.addColorStop(1, 'rgba(240,191,33,0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, w, h);
+        for (var i = 0; i < layers.length; i++) {
+          var L = layers[i];
+          strokeLayer(L, L.wide * dpr, L.alpha * 0.35);
+          strokeLayer(L, L.wide * 0.45 * dpr, L.alpha * 0.6);
+          strokeLayer(L, Math.max(1.2 * dpr, L.wide * 0.12 * dpr), Math.min(0.85, L.alpha * 1.6));
         }
       }
       size();
