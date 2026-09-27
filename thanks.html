@@ -816,6 +816,11 @@
     .thanks .actions { display: flex; justify-content: center; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 36px; }
     .thanks .got-it { display: block; font-style: normal; font-size: .48em; letter-spacing: -.04em; margin-top: .85em; }
     .thanks-heart { display: block; margin: 26px auto 0; }
+
+    /* ---- Desktop: full-bleed widescreen layout, matches the main page ---- */
+    @media (min-width: 1024px) {
+      .wrap { width: 100%; padding-left: clamp(32px, 4vw, 96px); padding-right: clamp(32px, 4vw, 96px); }
+    }
   </style>
 </head>
 <body>

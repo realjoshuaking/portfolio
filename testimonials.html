@@ -819,6 +819,11 @@
       .field-row { grid-template-columns: 1fr; }
     }
 
+    /* ---- Desktop: full-bleed widescreen layout, matches the main page ---- */
+    @media (min-width: 1024px) {
+      .wrap { width: 100%; padding-left: clamp(32px, 4vw, 96px); padding-right: clamp(32px, 4vw, 96px); }
+    }
+
   </style>
 </head>
 <body>
