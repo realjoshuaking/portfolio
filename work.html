@@ -644,8 +644,10 @@
     #hero-ink {
       position: absolute; inset: 0; width: 100%; height: 100%;
       pointer-events: none;
-      -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 42%);
-      mask-image: linear-gradient(to right, transparent 0%, #000 42%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 42%), linear-gradient(to bottom, #000 52%, transparent 100%);
+      -webkit-mask-composite: source-in;
+      mask-image: linear-gradient(to right, transparent 0%, #000 42%), linear-gradient(to bottom, #000 52%, transparent 100%);
+      mask-composite: intersect;
     }
     .page-hero > :not(#hero-ink) { position: relative; z-index: 1; }
     .page-hero h1 em { color: var(--accent); font-style: normal; }
@@ -1966,15 +1968,15 @@
         return {
           x: rnd(w * 0.30, w * 1.05),
           y: anyY ? rnd(-h * 0.2, h) : rnd(h, h * 1.3),
-          r: rnd(46, 130) * dpr,
+          r: rnd(60, 150) * dpr,
           speed: rnd(0.14, 0.38),
           sway: rnd(12, 48) * dpr,
           swaySpeed: rnd(0.15, 0.45),
           phase: rnd(0, 6.2832),
-          alpha: rnd(0.05, 0.11)
+          alpha: rnd(0.08, 0.17)
         };
       }
-      function init() { blobs = []; for (var i = 0; i < 14; i++) blobs.push(spawn(true)); }
+      function init() { blobs = []; for (var i = 0; i < 20; i++) blobs.push(spawn(true)); }
       function draw() {
         ctx.clearRect(0, 0, w, h);
         for (var i = 0; i < blobs.length; i++) {
