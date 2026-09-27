@@ -642,7 +642,14 @@
   
     /* ---- Sub-page shared additions (Phase 1 expansion) ---- */
     .nav a[aria-current="page"] { color: var(--ink); }
-    .page-hero { padding: clamp(64px, 9vw, 118px) 0 clamp(36px, 4vw, 56px); }
+    .page-hero { position: relative; overflow: hidden; padding: clamp(64px, 9vw, 118px) 0 clamp(36px, 4vw, 56px); }
+    #hero-sparkle {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 28%);
+      mask-image: linear-gradient(to bottom, transparent 0%, #000 28%);
+    }
+    .page-hero > :not(#hero-sparkle) { position: relative; z-index: 1; }
     .page-hero h1 em { color: var(--accent); font-style: normal; }
     .page-hero .lede { margin-top: 26px; }
     .gold-rule { border: 0; height: 1px; background: var(--accent); opacity: .45; margin: 0; }
@@ -877,6 +884,7 @@
 
   <main id="top">
     <div class="wrap page-hero">
+      <canvas id="hero-sparkle" aria-hidden="true"></canvas>
       <p class="eyebrow mono reveal">KIND WORDS</p>
       <h1 class="reveal">What people <em>say.</em></h1>
       <p class="lede reveal">The best review of my work is the work itself. But a few kind sentences never hurt.</p>
@@ -1856,6 +1864,75 @@
       }
     })();
   
+  </script>
+
+  <script>
+    // Falling sparkles in the hero: soft anime-style glints
+    (function () {
+      var c = document.getElementById('hero-sparkle');
+      if (!c || !c.getContext) return;
+      var ctx = c.getContext('2d');
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var dpr = Math.min(1.5, window.devicePixelRatio || 1);
+      var w = 0, h = 0, t = Math.random() * 40, sparks = [];
+      function rnd(a, b) { return a + Math.random() * (b - a); }
+      function size() {
+        var r = c.getBoundingClientRect();
+        w = c.width = Math.max(1, Math.floor(r.width * dpr));
+        h = c.height = Math.max(1, Math.floor(r.height * dpr));
+      }
+      function spawn(anyY) {
+        return {
+          x: rnd(0, w),
+          y: anyY ? rnd(0, h) : rnd(-30 * dpr, -4 * dpr),
+          s: rnd(3, 11) * dpr,
+          fall: rnd(0.25, 0.75),
+          sway: rnd(8, 30) * dpr,
+          swaySpeed: rnd(0.4, 1.0),
+          phase: rnd(0, 6.2832),
+          twinkle: rnd(1.2, 3.2),
+          alpha: rnd(0.25, 0.6),
+          gold: Math.random() < 0.6
+        };
+      }
+      function init() { sparks = []; for (var i = 0; i < 44; i++) sparks.push(spawn(true)); }
+      function star4(x, y, r, rot) {
+        ctx.beginPath();
+        for (var i = 0; i < 8; i++) {
+          var rr = (i % 2 === 0) ? r : r * 0.30;
+          var a = rot + i * Math.PI / 4;
+          var px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr;
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+      }
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        for (var i = 0; i < sparks.length; i++) {
+          var s = sparks[i];
+          var x = s.x + Math.sin(t * s.swaySpeed + s.phase) * s.sway;
+          var tw = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * s.twinkle + s.phase * 2));
+          var col = s.gold ? '240,191,33' : '255,244,214';
+          star4(x, s.y, s.s, s.phase);
+          ctx.fillStyle = 'rgba(' + col + ',' + (s.alpha * tw).toFixed(3) + ')';
+          ctx.fill();
+        }
+      }
+      function step() {
+        t += 0.016;
+        for (var i = 0; i < sparks.length; i++) {
+          var s = sparks[i];
+          s.y += s.fall * dpr;
+          if (s.y > h + 20 * dpr) sparks[i] = spawn(false);
+        }
+        draw();
+      }
+      size();
+      init();
+      window.addEventListener('resize', function () { size(); init(); });
+      draw();
+      if (!reduced) { (function loop() { step(); requestAnimationFrame(loop); })(); }
+    })();
   </script>
 </body>
 </html>

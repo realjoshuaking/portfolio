@@ -640,7 +640,14 @@
   
     /* ---- Sub-page shared additions (Phase 1 expansion) ---- */
     .nav a[aria-current="page"] { color: var(--ink); }
-    .page-hero { padding: clamp(64px, 9vw, 118px) 0 clamp(36px, 4vw, 56px); }
+    .page-hero { position: relative; overflow: hidden; padding: clamp(64px, 9vw, 118px) 0 clamp(36px, 4vw, 56px); }
+    #hero-stars {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 28%);
+      mask-image: linear-gradient(to bottom, transparent 0%, #000 28%);
+    }
+    .page-hero > :not(#hero-stars) { position: relative; z-index: 1; }
     .page-hero h1 em { color: var(--accent); font-style: normal; }
     .page-hero .lede { margin-top: 26px; }
     .gold-rule { border: 0; height: 1px; background: var(--accent); opacity: .45; margin: 0; }
@@ -869,6 +876,7 @@
 
   <main id="top">
     <div class="wrap page-hero">
+      <canvas id="hero-stars" aria-hidden="true"></canvas>
       <p class="eyebrow mono reveal">BOOK A PROJECT</p>
       <h1 class="reveal">Let's score your <em>story.</em></h1>
       <p class="lede reveal">Tell me what you're making and what it needs to feel like. I read every inquiry personally and reply within a couple of days.</p>
@@ -1922,6 +1930,77 @@
       }
     })();
   
+  </script>
+
+  <script>
+    // Falling stars in the hero: slow rotation, softly blurred
+    (function () {
+      var c = document.getElementById('hero-stars');
+      if (!c || !c.getContext) return;
+      var ctx = c.getContext('2d');
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var dpr = Math.min(1.5, window.devicePixelRatio || 1);
+      var w = 0, h = 0, t = Math.random() * 40, stars = [];
+      function rnd(a, b) { return a + Math.random() * (b - a); }
+      function size() {
+        var r = c.getBoundingClientRect();
+        w = c.width = Math.max(1, Math.floor(r.width * dpr));
+        h = c.height = Math.max(1, Math.floor(r.height * dpr));
+      }
+      function spawn(anyY) {
+        return {
+          x: rnd(0, w),
+          y: anyY ? rnd(0, h) : rnd(-40 * dpr, -8 * dpr),
+          r: rnd(7, 22) * dpr,
+          rot: rnd(0, 6.2832),
+          rotSpeed: rnd(-0.35, 0.35),
+          fall: rnd(0.18, 0.5),
+          sway: rnd(10, 34) * dpr,
+          swaySpeed: rnd(0.25, 0.6),
+          phase: rnd(0, 6.2832),
+          alpha: rnd(0.08, 0.20)
+        };
+      }
+      function init() { stars = []; for (var i = 0; i < 30; i++) stars.push(spawn(true)); }
+      function star5(x, y, r, rot) {
+        ctx.beginPath();
+        for (var i = 0; i < 10; i++) {
+          var rr = (i % 2 === 0) ? r : r * 0.42;
+          var a = rot + i * Math.PI / 5 - Math.PI / 2;
+          var px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr;
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+      }
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        ctx.shadowColor = 'rgba(240,191,33,0.5)';
+        ctx.shadowBlur = 10 * dpr;
+        for (var i = 0; i < stars.length; i++) {
+          var s = stars[i];
+          var x = s.x + Math.sin(t * s.swaySpeed + s.phase) * s.sway;
+          star5(x, s.y, s.r, s.rot);
+          ctx.fillStyle = 'rgba(240,191,33,' + s.alpha.toFixed(3) + ')';
+          ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+      }
+      function step() {
+        t += 0.016;
+        for (var i = 0; i < stars.length; i++) {
+          var s = stars[i];
+          s.y += s.fall * dpr;
+          s.rot += s.rotSpeed * 0.016;
+          if (s.y > h + 40 * dpr) stars[i] = spawn(false);
+        }
+        draw();
+      }
+      size();
+      init();
+      window.addEventListener('resize', function () { size(); init(); });
+      draw();
+      if (!reduced) { (function loop() { step(); requestAnimationFrame(loop); })(); }
+    })();
   </script>
 </body>
 </html>
