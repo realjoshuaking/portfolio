@@ -330,6 +330,14 @@
     .sound-toggle[aria-pressed="true"] { opacity: .55; }
     .sound-toggle[aria-pressed="true"] .slash { opacity: 1; }
     .sound-toggle[aria-pressed="true"] .wave { opacity: 0; }
+    .quotes-strip { padding: clamp(48px, 6vw, 84px) 0; border-top: 1px solid var(--line); }
+    .quotes-strip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(24px, 4vw, 56px); margin-top: 34px; }
+    .quotes-strip figure { margin: 0; }
+    .quotes-strip blockquote { margin: 0; font-family: "Cormorant Garamond", Georgia, serif; font-size: clamp(20px, 2vw, 26px); line-height: 1.45; letter-spacing: -.01em; color: var(--ink); }
+    .quotes-strip blockquote::before { content: ""; display: block; width: 44px; height: 1px; background: var(--accent); margin-bottom: 20px; }
+    .quotes-strip cite { display: block; margin-top: 18px; font-style: normal; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted); line-height: 1.7; }
+    .quotes-strip cite b { color: var(--ink); font-weight: 500; }
+    @media (max-width: 700px) { .quotes-strip-grid { grid-template-columns: 1fr; } }
     .contact { padding-top: 0; }
     .contact-panel { position: relative; overflow: hidden; border-radius: 28px; background: #101012; color: var(--ink); }
     .contact-bg { position: absolute; inset: -60px; background: url(artwork/fl-studio.jpg) center / cover no-repeat;
@@ -800,7 +808,7 @@
       <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="mobileMenu">Menu</button>
       <a href="services.html">Services</a>
       <a href="work.html">Work</a>
-      <a href="testimonials.html">Testimonials</a>
+      <a href="about.html">About</a>
       <a href="epk.html">Press Kit</a>
       <a class="contact-link" href="contact.html">Book a project</a>
       <button class="sound-toggle" id="soundToggle" aria-pressed="false" aria-label="Turn interface sounds off" title="Toggle interface sounds">
@@ -815,7 +823,7 @@
         <a href="index.html">Home</a>
         <a href="services.html">Services</a>
         <a href="work.html">Work</a>
-        <a href="testimonials.html">Testimonials</a>
+        <a href="about.html">About</a>
         <a href="epk.html">Press Kit</a>
         <a href="contact.html">Book a project</a>
       </div>
@@ -1193,6 +1201,20 @@
             <div class="tool"><span>Arturia vintage synths</span><span>Synthesis &amp; color</span></div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section class="wrap quotes-strip" aria-label="Kind words">
+      <p class="section-number mono">KIND WORDS</p>
+      <div class="quotes-strip-grid">
+        <figure>
+          <blockquote>This S#@% should go in a movie.</blockquote>
+          <cite><b>9IGHTLIFE</b><br>TikTok · &ldquo;Beneath The Moon&rdquo;</cite>
+        </figure>
+        <figure>
+          <blockquote>Joshua King clearly has experience in this realm. Because that was an insanely well-produced song.</blockquote>
+          <cite><b>Hatake</b><br>TikTok · &ldquo;Flash&rdquo;</cite>
+        </figure>
       </div>
     </section>
 
