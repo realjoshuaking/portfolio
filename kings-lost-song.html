@@ -9,8 +9,42 @@
   html, body { width: 100%; height: 100%; background: #050508; overflow: hidden;
     font-family: "Courier New", monospace; touch-action: none; user-select: none;
     -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
-  #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #050508; }
-  #game { image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
+  #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 35%, #14141c 0%, #07070b 70%); overflow: auto; padding: 24px; }
+  /* ---- retro arcade TV ---- */
+  #tv { width: min(94vw, 900px); background: linear-gradient(180deg, #33333d 0%, #232329 60%, #1b1b21 100%);
+    border-radius: 30px; padding: 26px 26px 20px; box-shadow: 0 30px 80px rgba(0,0,0,.75), 0 4px 18px rgba(0,0,0,.6),
+    inset 0 2px 3px rgba(255,255,255,.14), inset 0 -3px 6px rgba(0,0,0,.5); }
+  #bezel { display: flex; gap: 14px; background: #0b0b0f; border-radius: 20px; padding: 16px;
+    box-shadow: inset 0 3px 12px rgba(0,0,0,.9), inset 0 -1px 2px rgba(255,255,255,.06); }
+  .speaker { width: 30px; flex: none; border-radius: 10px;
+    background: repeating-linear-gradient(180deg, #050507 0 4px, #1d1d24 4px 7px);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,.8); }
+  #screen { position: relative; flex: 1; min-width: 0; border-radius: 16px; overflow: hidden; background: #000;
+    box-shadow: inset 0 0 40px rgba(0,0,0,.85), inset 0 0 8px rgba(0,0,0,.9), 0 0 24px rgba(120,110,180,.12); }
+  #game { width: 100%; height: auto; display: block; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
+  #scanlines { position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+    background: repeating-linear-gradient(180deg, rgba(0,0,0,.20) 0 1px, transparent 1px 3px); }
+  #glass { position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+    background: linear-gradient(115deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,.02) 22%, transparent 40%); }
+  #screenv { position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.38) 100%); }
+  #deck { display: flex; align-items: center; justify-content: center; gap: 20px; padding-top: 16px; }
+  .knob { width: 36px; height: 36px; border-radius: 50%; flex: none;
+    background: radial-gradient(circle at 35% 30%, #4a4a55, #232329 70%);
+    box-shadow: 0 2px 5px rgba(0,0,0,.6), inset 0 1px 2px rgba(255,255,255,.2); position: relative; }
+  .knob::after { content: ""; position: absolute; left: 50%; top: 3px; width: 3px; height: 10px;
+    background: #ffd250; border-radius: 2px; transform: translateX(-50%); }
+  #brand { font-size: 13px; letter-spacing: 5px; color: #c8a84b; font-weight: bold; text-shadow: 0 1px 2px #000; }
+  #led { width: 9px; height: 9px; border-radius: 50%; background: #ff3b30;
+    box-shadow: 0 0 8px #ff3b30, 0 0 3px #ff3b30; flex: none; }
+  @media (max-width: 560px) {
+    #tv { padding: 14px 14px 12px; border-radius: 22px; }
+    #bezel { padding: 10px; gap: 8px; border-radius: 14px; }
+    .speaker { width: 18px; }
+    #brand { font-size: 10px; letter-spacing: 3px; }
+    .knob { width: 28px; height: 28px; }
+  }
   /* touch controls */
   #touch { position: fixed; inset: 0; pointer-events: none; display: none; z-index: 20; }
   #touch.on { display: block; }
@@ -34,7 +68,26 @@
 </style>
 </head>
 <body>
-<div id="wrap"><canvas id="game" width="384" height="224"></canvas></div>
+<div id="wrap">
+  <div id="tv">
+    <div id="bezel">
+      <div class="speaker"></div>
+      <div id="screen">
+        <canvas id="game" width="384" height="224"></canvas>
+        <div id="scanlines"></div>
+        <div id="glass"></div>
+        <div id="screenv"></div>
+      </div>
+      <div class="speaker"></div>
+    </div>
+    <div id="deck">
+      <div class="knob"></div>
+      <div id="brand">THE KING'S</div>
+      <div id="led"></div>
+      <div class="knob"></div>
+    </div>
+  </div>
+</div>
 <div id="touch">
   <div class="dpad">
     <div class="dbtn" id="dUp">&#9650;</div>
@@ -58,14 +111,7 @@ ctx.imageSmoothingEnabled = false;
 const W = 384, H = 224, TILE = 16;
 const VW = 24, VH = 14; // viewport in tiles
 
-function fitScreen() {
-  const s = Math.min(window.innerWidth / W, window.innerHeight / H);
-  const si = Math.max(1, Math.floor(s * 2) / 2);
-  cv.style.width = (W * si) + 'px';
-  cv.style.height = (H * si) + 'px';
-}
-window.addEventListener('resize', fitScreen);
-fitScreen();
+/* Canvas is sized by CSS inside the retro TV frame; internal res stays 384x224. */
 
 /* ---------------- Audio: SFX synth + Joshua's music slots ---------------- */
 const AudioSys = {
@@ -94,6 +140,22 @@ const AudioSys = {
     setTimeout(() => this.tone(scale[i % 8] * 2, 0.3, 'triangle', 0.08), 90);
   },
   fanfare(){ [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.tone(f, 0.22, 'square', 0.1), i * 130)); },
+  noise(dur, vol, filterFreq) {
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime, len = Math.floor(this.ctx.sampleRate * dur);
+    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = this.ctx.createBufferSource(); src.buffer = buf;
+    const f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = filterFreq || 400;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(vol || 0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    src.connect(f); f.connect(g); g.connect(this.ctx.destination);
+    src.start(t);
+  },
+  thunder() { this.noise(1.5, 0.28, 160); this.tone(110, 1.1, 'sine', 0.20, 30); },
+  boom()    { this.tone(72, 0.5, 'sine', 0.30, 32); this.noise(0.3, 0.18, 800); },
+  thud()    { this.tone(150, 0.12, 'sine', 0.13, 65); },
   playSong(){ // the restored perfect song: gentle 8-note melody
     const seq = [523.3, 587.3, 659.3, 784.0, 659.3, 587.3, 523.3, 392.0];
     seq.forEach((f, i) => { setTimeout(() => this.tone(f, 0.5, 'triangle', 0.13), i * 340);
@@ -129,6 +191,7 @@ const Input = {
       ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
     window.addEventListener('keydown', e => {
       AudioSys.init();
+      if (e.repeat) return; // one action per physical keystroke, no OS key repeat
       if (km[e.code]) { this[km[e.code]] = true; e.preventDefault(); }
       if (e.code === 'Space' || e.code === 'KeyJ') { this._atkQ = true; e.preventDefault(); }
       if (e.code === 'Enter') { this._startQ = true; }
@@ -187,95 +250,129 @@ function drawSpr(img, x, y, flip) {
 /* ---------------- Sprites ---------------- */
 const SPR = {};
 const TUNICS = [
-  { name: 'Hero Green', main: '#3fae5a', dark: '#2a7a3e' },
-  { name: 'Sky Blue',   main: '#4a90d9', dark: '#2f6396' },
-  { name: 'Royal Red',  main: '#d94a4a', dark: '#962f2f' },
-  { name: 'Deep Purple',main: '#9b59d0', dark: '#6b3a92' },
-  { name: 'King Gold',  main: '#e8b93c', dark: '#a37f22' }
+  { name: 'Hero Green', main: '#3fae5a', dark: '#2a7a3e', light: '#7cc795' },
+  { name: 'Sky Blue',   main: '#4a90d9', dark: '#2f6396', light: '#82b5e5' },
+  { name: 'Royal Red',  main: '#d94a4a', dark: '#962f2f', light: '#e58282' },
+  { name: 'Deep Purple',main: '#9b59d0', dark: '#6b3a92', light: '#bb86dd' },
+  { name: 'King Gold',  main: '#e8b93c', dark: '#a37f22', light: '#f0cd6e' }
 ];
 const HATS = ['None', 'Cap', 'Crown'];
 
 function buildPlayer(tunicIdx) {
   const T = TUNICS[tunicIdx];
-  const pal = { K: '#1a1c2c', G: '#ffd250', Y: '#fff3b0', S: '#ffccaa', E: '#1a1c2c',
-    T: T.main, D: T.dark, B: '#6b4a2f', P: '#3d3d5c', H: '#5a3a22' };
+  const pal = { K: '#14141f', H: '#6b4423', h: '#9a6530', S: '#ffcf9e', s: '#e0a06a', E: '#14141f',
+    T: T.main, D: T.dark, L: T.light, B: '#4a3320' };
   const P = {};
-  // facing down, 2 frames
   P.down = [makeSprite([
     "................",
-    ".....GGGGG......",
-    ".....GYYYG......",
-    ".....GGGGG......",
     ".....KKKKK......",
-    "......SSS.......",
-    "......SES.......",
-    "......SSS.......",
-    ".......S........",
-    ".....TTTTT......",
-    "....TTTTTTT.....",
-    "....TDDDDDT.....",
-    "....TTTTTTT.....",
-    ".....TTTTT......",
-    ".....B...B......",
-    ".....B...B......"], pal),
+    "....KHHHHHK.....",
+    "....KHhHHHK.....",
+    "....KHHHHHK.....",
+    "....KSSSSSK.....",
+    "....KSESESK.....",
+    "....KSSsSSK.....",
+    ".....KSSSK......",
+    "...KKTTTTKKK....",
+    "..KTLTTTTTTK....",
+    "..KSTTTTTTSK....",
+    "..KsTTTTTTsK....",
+    "...KTDDDTTK.....",
+    "...KTTTTTTK.....",
+    "....KBB.KBK....."
+  ], pal),
   makeSprite([
     "................",
-    ".....GGGGG......",
-    ".....GYYYG......",
-    ".....GGGGG......",
     ".....KKKKK......",
-    "......SSS.......",
-    "......SES.......",
-    "......SSS.......",
-    ".......S........",
-    ".....TTTTT......",
-    "....TTTTTTT.....",
-    "....TDDDDDT.....",
-    "....TTTTTTT.....",
-    ".....TTTTT......",
-    "......B.B.......",
-    ".....B...B......"], pal)];
-  // facing up, 2 frames (back of head = hair)
-  const upRows = f => ([
+    "....KHHHHHK.....",
+    "....KHhHHHK.....",
+    "....KHHHHHK.....",
+    "....KSSSSSK.....",
+    "....KSESESK.....",
+    "....KSSsSSK.....",
+    ".....KSSSK......",
+    "...KKTTTTKKK....",
+    "..KTLTTTTTTK....",
+    "..KSTTTTTTSK....",
+    "..KsTTTTTTsK....",
+    "...KTDDDTTK.....",
+    "...KTTTTTTK.....",
+    "....KBK.BBK....."
+  ], pal)];
+  P.up = [makeSprite([
     "................",
-    ".....GGGGG......",
-    ".....GYYYG......",
-    ".....GGGGG......",
     ".....KKKKK......",
-    "......HHH.......",
-    ".....HHHHH......",
-    ".....HHHHH......",
-    "......HHH.......",
-    ".....TTTTT......",
-    "....TTTTTTT.....",
-    "....TDDDDDT.....",
-    "....TTTTTTT.....",
-    ".....TTTTT......",
-    f ? "......B.B......." : ".....B...B......",
-    f ? ".....B...B......" : ".....B...B......"]);
-  P.up = [makeSprite(upRows(false), pal), makeSprite(upRows(true), pal)];
-  // facing side, 2 frames (drawn facing right; flip for left)
-  const sideRows = f => ([
+    "....KHHHHHK.....",
+    "....KHhHHHK.....",
+    "....KHHHHHK.....",
+    "....KHHHHHK.....",
+    "....KHHHHHK.....",
+    "....KHHHHHK.....",
+    ".....KHHHK......",
+    "...KKTTTTKKK....",
+    "..KTLTTTTTTK....",
+    "..KTTTTTTTTK....",
+    "..KTTTTTTTTK....",
+    "...KTDDDTTK.....",
+    "...KTTTTTTK.....",
+    "....KBB.KBK....."
+  ], pal),
+  makeSprite([
     "................",
-    ".....GGGGG......",
-    ".....GYYYG......",
-    ".....GGGGG......",
     ".....KKKKK......",
-    "......SSSS......",
-    "......SSSE......",
-    "......SSSS......",
-    ".......SS.......",
-    ".....TTTTT......",
-    "....TTTTTTT.....",
-    "....TDDDDDT.....",
-    "....TTTTTTT.....",
-    ".....TTTTT......",
-    f ? "......BB........" : ".....BB.........",
-    f ? ".....BB........." : "......BB........"]);
-  P.side = [makeSprite(sideRows(false), pal), makeSprite(sideRows(true), pal)];
+    "....KHHHHHK.....",
+    "....KHhHHHK.....",
+    "....KHHHHHK.....",
+    "....KHHHHHK.....",
+    "....KHHHHHK.....",
+    "....KHHHHHK.....",
+    ".....KHHHK......",
+    "...KKTTTTKKK....",
+    "..KTLTTTTTTK....",
+    "..KTTTTTTTTK....",
+    "..KTTTTTTTTK....",
+    "...KTDDDTTK.....",
+    "...KTTTTTTK.....",
+    "....KBK.BBK....."
+  ], pal)];
+  P.side = [makeSprite([
+    "................",
+    ".....KKKKK......",
+    "....KHHHHHK.....",
+    "....KHhHHHK.....",
+    "....KHHHHHK.....",
+    "....KSSSSSK.....",
+    "....KSSSSEK.....",
+    "....KSSsSSK.....",
+    ".....KSSSK......",
+    "....KKTTTTKK....",
+    "...KTLTTTTTK....",
+    "...KTTTTTTSK....",
+    "...KTTTTTTTK....",
+    "....KTDDDTTK....",
+    "....KTTTTTTK....",
+    "....KBB...BK...."
+  ], pal),
+  makeSprite([
+    "................",
+    ".....KKKKK......",
+    "....KHHHHHK.....",
+    "....KHhHHHK.....",
+    "....KHHHHHK.....",
+    "....KSSSSSK.....",
+    "....KSSSSEK.....",
+    "....KSSsSSK.....",
+    ".....KSSSK......",
+    "....KKTTTTKK....",
+    "...KTLTTTTTK....",
+    "...KTTTTTTSK....",
+    "...KTTTTTTTK....",
+    "....KTDDDTTK....",
+    "....KTTTTTTK....",
+    ".....KBBBK......"
+  ], pal)];
   return P;
 }
-// hat overlays (drawn over head)
 function buildHats() {
   const cap = makeSprite([
     "................",
@@ -299,110 +396,188 @@ function buildHats() {
     "................","................"], { G: '#ffd250', Y: '#fff3b0' });
   return { cap, crownBig };
 }
-// sword swing arc frames (drawn relative to player)
+
 function buildSwing() {
-  const pal = { W: '#e8ecf4', B: '#8a93a8', K: '#1a1c2c' };
-  return [
-    makeSprite([".......WW.......","......WWWW......","......WBWW......","......WBWW......",
-      "................","................","................","................",
-      "................","................","................","................",
-      "................","................","................","................"], pal),
-    makeSprite(["..........WWWW..",".........WWWBW..","........WWWB....",".......WWB......",
-      "................","................","................","................",
-      "................","................","................","................",
-      "................","................","................","................"], pal)
-  ];
+  const pal = { W: '#eef2fa', w: '#9aa3b8', K: '#14141f', G: '#ffd250', H: '#6b4423' };
+  return [makeSprite([
+    "..........WW....",
+    ".........WWWK...",
+    "........WWWK....",
+    ".......WWWK.....",
+    "......WWWK......",
+    ".....WWK........",
+    "....GGK.........",
+    ".....HK.........",
+    ".....HK.........",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................"
+  ], pal),
+  makeSprite([
+    "................",
+    "................",
+    "................",
+    "......WWWWWW....",
+    ".....WWWWWWWK...",
+    "....WWK.........",
+    "...GGK..........",
+    "....HK..........",
+    "....HK..........",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................"
+  ], pal)];
 }
-// Blank: sheet-music ghost with empty staves, 2 frames
 function buildBlank() {
-  const pal = { W: '#f4f4f4', K: '#1a1c2c', G: '#9aa0b5' };
-  const f = tilt => makeSprite([
+  const pal = { K: '#14141f', W: '#f2f0e8', w: '#cfccc0', G: '#9aa0b5', E: '#14141f' };
+  return [makeSprite([
     "................",
-    ".....WWWWW......",
-    "....WWWWWWW.....",
-    "....WGGGGGW.....",
-    "....WKWWWK......",
-    "....WGGGGGW.....",
-    "....WWWWWWW.....",
-    "....WGGGGGW.....",
-    "....WWWWWWW.....",
-    "....WGGGGGW.....",
-    "....WWWWWWW.....",
-    tilt ? ".....WWWWW......." : ".......WWWWW.....",
-    tilt ? "......WWW........" : "........WWW......",
-    "................","................","................"], pal);
-  return [f(false), f(true)];
+    "....KKKKKKK.....",
+    "...KWWWWWWWK....",
+    "...KWGGGGGWK....",
+    "...KWEWWEWWK....",
+    "...KWGGGGGWK....",
+    "...KWWWWWWWK....",
+    "...KWGGGGGWK....",
+    "...KWWWWWWWK....",
+    "...KWGGGGGWK....",
+    "...KWWWWWWWK....",
+    "....KWWWWWK.....",
+    "....KWK.KWK.....",
+    ".....K...K......",
+    "................",
+    "................"
+  ], pal),
+  makeSprite([
+    "....KKKKKKK.....",
+    "...KWWWWWWWK....",
+    "...KWGGGGGWK....",
+    "...KWEWWEWWK....",
+    "...KWGGGGGWK....",
+    "...KWWWWWWWK....",
+    "...KWGGGGGWK....",
+    "...KWWWWWWWK....",
+    "...KWGGGGGWK....",
+    "...KWWWWWWWK....",
+    "....KWWWWWK.....",
+    ".....KWKWK......",
+    "......K.K.......",
+    "................",
+    "................",
+    "................"
+  ], pal)];
 }
-// Doubt: dark wisp, 2 frames
 function buildDoubt() {
-  const pal = { D: '#4a3b6b', P: '#7a5fa8', E: '#ff6b6b', K: '#1a1c2c' };
-  const f = w => makeSprite([
+  const pal = { K: '#0d0d15', D: '#3a2b5c', d: '#241a3d', P: '#7a5fc0', E: '#ff4d4d' };
+  return [makeSprite([
     "................",
-    w ? "......DDD......." : ".......DDD......",
-    w ? ".....DPDPD......" : "......DPDPD.....",
-    ".....DDDDD......",
-    ".....DEDED......",
-    ".....DDDDD......",
-    "....DDDDDDD.....",
-    "....DDDDDDD.....",
-    w ? "...DD.DDD.DD...." : "....DD.DDD.DD...",
-    "....D..D..D.....",
-    "................","................","................",
-    "................","................","................"], pal);
-  return [f(false), f(true)];
-}
-// The Critic: mini-boss, 24x24, frowning with glasses
-function buildCritic() {
-  const pal = { S: '#e8b088', K: '#1a1c2c', W: '#ffffff', B: '#2a2a3a', R: '#c0392b' };
-  const rows = [];
-  const push = r => rows.push(r.padEnd(24, '.'));
-  push("........KKKKKKKK........");
-  push("......KKSSSSSSSKK......");
-  push(".....KSSSSSSSSSSK.....");
-  push(".....KSWWKKWWKSK......");
-  push(".....KSWWKKWWKSK......");
-  push(".....KSSSSSSSSSK......");
-  push("......KSSKKKSSK.......");
-  push("......KSRRRRRSK.......");
-  push(".......KRRRRRK........");
-  push("........KKKKK.........");
-  push("......BBBBBBBB........");
-  push(".....BBBBBBBBBB.......");
-  push(".....BBBKBBKBBB.......");
-  push(".....BBBBBBBBBB.......");
-  push("......BBBBBBBB........");
-  for (let i = 0; i < 9; i++) push("........................");
-  return makeSprite(rows, pal);
-}
-// The Silence: final boss, 32x40 dark robe, void face
-function buildSilence() {
-  const pal = { K: '#0a0a12', D: '#1e1e30', V: '#2e2e4e', E: '#ffffff', M: '#050508' };
-  const rows = [];
-  const push = r => rows.push(r.padEnd(32, '.'));
-  push("............KKKKKK............");
-  push("..........KKDDDDDDKK..........");
-  push(".........KDDDDDDDDDDK.........");
-  push(".........KDDDMMMMDDDK.........");
-  push(".........KDDMEEMEDDK..........");
-  push(".........KDDMEEMEDDK..........");
-  push(".........KDDDMMMMDDDK.........");
-  push(".........KDDDDDDDDDDK.........");
-  push("..........KDDDDDDDDK..........");
-  push("........KKDDDDDDDDDDKK........");
-  push(".......KDDDVDDDDDDVDDDK.......");
-  push(".......KDDDVDDDDDDVDDDK.......");
-  push(".......KDDDDDDDDDDDDDDK.......");
-  push(".......KDDDDDDDDDDDDDDK.......");
-  push(".......KDDDKDDDDDKDDDK........");
-  push("........KDDKDDDDDKDDK.........");
-  push("........KDDKDDDDDKDDK.........");
-  push("........KDDKDDDDDKDDK.........");
-  push("........KKKKDDDDDKKKK.........");
-  for (let i = 0; i < 21; i++) push("................................");
-  return makeSprite(rows, pal);
-}
-// Note collectible: golden eighth note, 2 sparkle frames
-function buildNote() {
+    "..K.........K...",
+    "..KPK.....KPK...",
+    "...KDDDDDDDK....",
+    "..KDDDDDDDDDK...",
+    "..KDDEEDDEEDK...",
+    "..KDDDDDDDDDK...",
+    ".KDDDDDDDDDDDK..",
+    ".KDKDDDDDDDKDK..",
+    ".KKDDDDDDDDDKK..",
+    "..KDDDDDDDDDK...",
+    "..KDDKDDDKDDK...",
+    "...KDKK.KKDK....",
+    "....K.....K.....",
+    "................",
+    "................"
+  ], pal),
+  makeSprite([
+    "................",
+    "...K.........K..",
+    "...KPK.....KPK..",
+    "....KDDDDDDDK...",
+    "...KDDDDDDDDDK..",
+    "...KDDEEDDEEDK..",
+    "...KDDDDDDDDDK..",
+    "..KDDDDDDDDDDDK.",
+    "..KDKDDDDDDDKDK.",
+    "..KKDDDDDDDDDKK.",
+    "...KDDDDDDDDDK..",
+    "...KDDKDDDKDDK..",
+    "....KDKK.KKDK...",
+    ".....K.....K....",
+    "................",
+    "................"
+  ], pal)];
+}function buildCritic() {
+  const pal = { K: '#14141f', R: '#4a1f24', r: '#6b2a30', W: '#f2ede0', w: '#cfc8b5', E: '#14141f', M: '#4a0d0d', Q: '#d94a4a', q: '#ff8a8a', S: '#ffcf9e' };
+  return makeSprite([
+    ".......KK......KK.......",
+    ".......KRK....KRK.......",
+    ".......KRRKKKKRRK.......",
+    "........KWWWWWWK........",
+    ".......KWWWWWWWWK.......",
+    "......KWWKKKKKKWWK......",
+    "......KWEWKKKKWEWK......",
+    "......KWWWWWWWWWWK......",
+    ".......KWwWWWWwWK.......",
+    ".......KWMMMMMMWK...Qq..",
+    "........KWWWWWWK...Qq...",
+    ".......KKRRRRRKK..Qq....",
+    ".......KRRRRRRRRKQq.....",
+    "......KRRRRRRRRRQq......",
+    "......KRRRRRRRQQK.......",
+    "......KRRRRRSSRRK.......",
+    ".......KRRRRRRRK........",
+    "........KRRRRRRK........",
+    "........KRRRRRK.........",
+    "........KRRRRRK.........",
+    ".........KRRRK..........",
+    "..........KRK...........",
+    "...........K............",
+    "........................"
+  ], pal);
+}function buildSilence() {
+  const pal = { K: '#080810', C: '#1c1c30', c: '#101020', V: '#3a3a5c', F: '#000000', E: '#e8e8f2', S: '#5a5a7a', H: '#8a8aa5' };
+  return makeSprite([
+    "................................",
+    ".....SSSSSSSSSSSSSSSSSSSSSS.....",
+    ".....S...SS...SS...SS...S.......",
+    "......SSS..SSS..SSS..SSS........",
+    "............KKKKKK..............",
+    "..........KKCCCCCCKK............",
+    ".........KCCCCCCCCCCK...........",
+    ".........KCCFFFFFFCCK...........",
+    ".........KCFEFFFFEFCK...........",
+    ".........KCFEFFFFEFCK...........",
+    ".........KCCFFFFFFCCK...........",
+    ".........KCCCCCCCCCCK...........",
+    "..........KCCCCCCCK.............",
+    "........KKCCCCCCCCCKK...........",
+    ".......KCCCVCCCCCCVCCCK.........",
+    ".......KCCCVCCCCCCVCCCK.........",
+    ".......KCCCCCCCCCCCCCK..........",
+    ".......KCCCCCCCCCCCCCK..........",
+    "......KCCCCCCCCCCCCCCCK.........",
+    "......KCCCKCCCCCCCKCCCK.........",
+    "......KHCCKCCCCCCCKCCHK.........",
+    "......KHHKCCCCCCCKHHK...........",
+    ".......KHKCCCCCCCKHK............",
+    "........KCCCCCCCCCK.............",
+    ".........CCCCCCCCC..............",
+    ".........CcCCCcCC...............",
+    "..........CCCCCC................",
+    "..........CcCCcC................",
+    "............CCCC................",
+    ".............CC.................",
+    "................................",
+    "................................"
+  ], pal);
+}function buildNote() {
   const pal = { G: '#ffd250', Y: '#fff3b0', K: '#1a1c2c', W: '#ffffff' };
   const f = s => makeSprite([
     "................",
@@ -423,28 +598,28 @@ function buildNote() {
     "................"], pal);
   return [f(false), f(true)];
 }
-// NPC: old Maestro with baton
+
 function buildMaestro() {
-  const pal = { K: '#1a1c2c', S: '#ffccaa', W: '#e8e8e8', G: '#8a8a9a', B: '#4a3b2c', R: '#c0392b' };
+  const pal = { K: '#14141f', S: '#ffcf9e', s: '#e0a06a', W: '#e8e8e8', w: '#b8b8b8', R: '#3a3a4e', r: '#2a2a3a', B: '#6b4423', T: '#ffd250' };
   return makeSprite([
     "................",
     "......WWWW......",
     ".....WWWWWW.....",
     ".....WSSSSW.....",
-    ".....WSKSKS.....",
+    ".....WSESEW.....",
     ".....WSSSSW.....",
-    "......WSSW......",
-    ".....RRRRR......",
-    "....RRRRRRR.....",
-    "....RWRRRRR.....",
-    "....RRRRRRR.....",
-    ".....RRRRR......",
-    ".....B...B......",
-    ".....B...B..W...",
-    "............W...",
-    "................"], pal);
+    ".....WWWWWW.....",
+    "....WWWWWWWW....",
+    "....WWWWWWWW....",
+    ".....RRRRRR.....",
+    "....RRRRRRRR....",
+    "....RSRRRRSR....",
+    "....RRRRRRRR....",
+    ".....RRRRRR.....",
+    ".....B....B.....",
+    ".....B....BT...."
+  ], pal);
 }
-
 /* ---------------- Tiles ---------------- */
 const TILES = {};
 function buildTiles() {
@@ -656,14 +831,14 @@ function loadArea(idx, spawnOverride) {
 }
 function spawnEnemy(type, x, y) {
   const base = { x: x - 8, y: y - 8, type, t: Math.random() * 60, dir: 1, hurt: 0, kx: 0, ky: 0 };
-  if (type === 'blank') Object.assign(base, { w: 14, h: 12, hp: 2, speed: 0.5, dmg: 1 });
-  if (type === 'doubt') Object.assign(base, { w: 14, h: 12, hp: 3, speed: 0.7, dmg: 1, slowT: 0 });
-  if (type === 'critic') Object.assign(base, { w: 20, h: 20, hp: 10, speed: 0.45, dmg: 1 });
+  if (type === 'blank') Object.assign(base, { w: 14, h: 12, hp: 2, speed: 0.30, dmg: 1 });
+  if (type === 'doubt') Object.assign(base, { w: 14, h: 12, hp: 3, speed: 0.40, dmg: 1, slowT: 0 });
+  if (type === 'critic') Object.assign(base, { w: 20, h: 20, hp: 10, speed: 0.28, dmg: 1 });
   game.enemies.push(base);
 }
 function newPlayer() {
   return { x: 0, y: 0, w: 12, h: 13, dir: 'down', hearts: 3, maxHearts: 3,
-    speed: 1.5, swing: 0, swingCd: 0, iframe: 0, walkT: 0, moving: false,
+    speed: 0.95, swing: 0, swingCd: 0, iframe: 0, walkT: 0, moving: false,
     slowT: 0, dead: false };
 }
 function snapCamera() {
@@ -856,7 +1031,7 @@ function updateEnemies() {
       // the Critic parrots your moves: mirrors your direction
       if (dist < 140) tryMove(e, dx / dist * 0.8, dy / dist * 0.8);
       e.atkT = (e.atkT || 0) + 1;
-      if (e.atkT > 90 && dist < 120) { e.atkT = 0; fireProj(cx, cy, dx / dist, dy / dist, 1.6); AudioSys.hit(); }
+      if (e.atkT > 90 && dist < 120) { e.atkT = 0; fireProj(cx, cy, dx / dist, dy / dist, 1.0); AudioSys.hit(); }
     }
     // touch damage (not during dialogue)
     if (game.state !== 'dialog' && !p.dead && Math.abs(cx - px) < (e.w + 10) / 2 && Math.abs(cy - py) < (e.h + 10) / 2) {
@@ -1044,76 +1219,154 @@ function drawHUD() {
 
 /* ---------------- Title: LTTP-homage intro, original ---------------- */
 const Title = {
-  t: 0, phase: 0, letters: 0, notes: [],
-  reset() { this.t = 0; this.phase = 0; this.letters = 0; this.notes = []; },
+  t: 0, phase: 0, notes: [], puffs: [],
+  crownY: -60, crownV: 0, letters: [], flash: 0, shakeT: 0, rayA: 0,
+  reset() {
+    this.t = 0; this.phase = 0; this.notes = []; this.puffs = [];
+    this.crownY = -60; this.crownV = 0; this.letters = [];
+    this.flash = 0; this.shakeT = 0; this.rayA = 0;
+  },
+  shake(n) { this.shakeT = Math.max(this.shakeT, n); },
+  puff(x, y, big) {
+    for (let i = 0; i < (big ? 14 : 6); i++) {
+      const a = Math.random() * Math.PI * 2, s = 0.6 + Math.random() * (big ? 2.2 : 1.2);
+      this.puffs.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 0.5, life: 22 + Math.random() * 10 });
+    }
+  },
+  spawnLetters() {
+    const mk = (word, y0, delay) => {
+      const cw = 19, x0 = W / 2 - (word.length * cw) / 2 + cw / 2;
+      for (let i = 0; i < word.length; i++)
+        this.letters.push({ ch: word[i], x: x0 + i * cw, y: -24 - i * 10, v: 0,
+          ty: y0, delay: delay + i * 9, landed: false, squash: 0 });
+    };
+    mk("THE KING'S", 138, 0);
+    mk("LOST SONG", 170, 95);
+  },
   update() {
     this.t++;
-    if (this.phase === 0 && this.t > 40) { this.phase = 1; this.t = 0; }
-    else if (this.phase === 1) {
-      if (this.t % 8 === 0 && this.notes.length < 60)
-        this.notes.push({ x: Math.random() * W, y: -10, v: 1 + Math.random() * 1.5, s: Math.random() < 0.5 });
-      if (this.t > 130) { this.phase = 2; this.t = 0; }
-    }
-    else if (this.phase === 2) {
-      if (this.t % 9 === 0 && this.letters < 21) {
-        this.letters++;
-        AudioSys.tone(392 + this.letters * 22, 0.25, 'triangle', 0.09);
+    if (this.flash > 0) this.flash--;
+    if (this.shakeT > 0) this.shakeT--;
+    for (const p of this.puffs) { p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.life--; }
+    this.puffs = this.puffs.filter(p => p.life > 0);
+    if (this.phase === 0) {
+      // darkness, then lightning cracks the sky
+      if (this.t === 55) { this.flash = 9; this.shake(14); AudioSys.thunder(); }
+      if (this.t > 105) { this.phase = 1; this.t = 0; }
+    } else if (this.phase === 1) {
+      // the crown drops from the heavens and SLAMS down
+      this.crownV += 0.85; this.crownY += this.crownV;
+      if (this.crownY >= 78 && this.crownV > 0) {
+        this.crownY = 78; this.crownV = 0;
+        this.flash = 11; this.shake(20);
+        AudioSys.boom(); this.puff(W / 2, 96, true);
+        this.spawnLetters(); this.phase = 2; this.t = 0;
       }
-      if (this.letters >= 21 && this.t > 200) { this.phase = 3; this.t = 0; }
-    }
-    else if (this.phase === 3) {
+    } else if (this.phase === 2) {
+      // title letters crash down one by one
+      let all = true;
+      for (const L of this.letters) {
+        if (L.landed) { if (L.squash > 0) L.squash--; continue; }
+        all = false;
+        if (this.t < L.delay) continue;
+        L.v += 0.55; L.y += L.v;
+        if (L.y >= L.ty) {
+          L.y = L.ty; L.landed = true; L.squash = 7;
+          AudioSys.thud(); this.shake(3); this.puff(L.x, L.ty + 8, false);
+        }
+      }
+      if (all && this.t > 200) { this.phase = 3; this.t = 0; }
+    } else if (this.phase === 3) {
+      this.rayA += 0.008;
+      if (this.t % 8 === 0 && this.notes.length < 50)
+        this.notes.push({ x: Math.random() * W, y: -10, v: 0.8 + Math.random() * 1.2, s: Math.random() < 0.5 });
+      for (const n of this.notes) n.y += n.v;
+      this.notes = this.notes.filter(n => n.y < H + 10);
       if (Input.consumeStart()) { AudioSys.fanfare(); NameEntry.reset(); game.state = 'name'; }
     }
-    for (const n of this.notes) n.y += n.v;
-    this.notes = this.notes.filter(n => n.y < H + 10);
+  },
+  drawCrown(x, y, s) {
+    // s = scale; crown slams in at (x, y)
+    ctx.fillStyle = '#ffd250';
+    const w = 30 * s, h = 9 * s;
+    ctx.fillRect(x - w, y, w * 2, h);
+    for (let i = -1; i <= 1; i++) {
+      const px = x + i * w * 0.62;
+      ctx.beginPath();
+      ctx.moveTo(px - 7 * s, y); ctx.lineTo(px, y - 13 * s); ctx.lineTo(px + 7 * s, y);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#c0392b';
+    ctx.fillRect(x - 4 * s, y + 2 * s, 8 * s, 4 * s);
+    ctx.fillStyle = '#fff3b0';
+    ctx.fillRect(x - w + 2 * s, y + 2 * s, 5 * s, 2 * s);
   },
   draw() {
-    ctx.fillStyle = '#050508'; ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    if (this.shakeT > 0)
+      ctx.translate((Math.random() - 0.5) * this.shakeT * 0.7, (Math.random() - 0.5) * this.shakeT * 0.7);
+    ctx.fillStyle = '#050508'; ctx.fillRect(-20, -20, W + 40, H + 40);
     if (this.phase >= 1) {
-      // staff lines fade in
-      ctx.strokeStyle = 'rgba(120,110,160,' + Math.min(0.5, this.t / 100) + ')';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(20, 60 + i * 10); ctx.lineTo(W - 20, 60 + i * 10); ctx.stroke(); }
-      // falling notes like rain
+      // storm clouds parting behind the crown
+      const g = ctx.createRadialGradient(W/2, 70, 10, W/2, 70, 190);
+      g.addColorStop(0, 'rgba(90,80,140,0.5)'); g.addColorStop(1, 'rgba(5,5,8,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      // the crown, fallen from above
+      const cs = this.phase === 1 ? Math.min(1.6, 1 + this.crownV * 0.03) : 1.6;
+      this.drawCrown(W / 2, this.crownY, cs);
+    }
+    if (this.phase >= 2) {
+      // god rays bursting behind the title
+      if (this.phase === 3) {
+        ctx.save(); ctx.translate(W / 2, 154); ctx.rotate(this.rayA);
+        ctx.fillStyle = 'rgba(255,210,80,0.05)';
+        for (let i = 0; i < 12; i++) {
+          ctx.rotate(Math.PI / 6);
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(220, -26); ctx.lineTo(220, 26); ctx.fill();
+        }
+        ctx.restore();
+      }
+      ctx.textAlign = 'center'; ctx.font = 'bold 27px "Courier New", monospace';
+      for (const L of this.letters) {
+        if (this.t < L.delay && !L.landed && this.phase === 2) continue;
+        const sy = L.landed && L.squash > 0 ? 1 - (L.squash / 7) * 0.25 : 1;
+        ctx.save(); ctx.translate(L.x, L.y); ctx.scale(1, sy);
+        ctx.fillStyle = L.ty < 150 ? '#ffd250' : '#f4f4f4';
+        ctx.fillText(L.ch, 0, 0);
+        ctx.restore();
+      }
+      ctx.textAlign = 'left';
+    }
+    if (this.phase >= 2) {
+      // dust puffs
+      ctx.fillStyle = 'rgba(180,170,200,0.55)';
+      for (const p of this.puffs) ctx.fillRect(p.x, p.y, 2, 2);
+    }
+    if (this.phase === 3) {
+      // staff lines + note rain under the finished title
+      ctx.strokeStyle = 'rgba(120,110,160,0.35)'; ctx.lineWidth = 1;
+      for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(20, 62 + i * 9); ctx.lineTo(W - 20, 62 + i * 9); ctx.stroke(); }
       ctx.fillStyle = '#8f86b8';
       for (const n of this.notes) {
         ctx.fillRect(n.x, n.y, 3, 3);
         ctx.fillRect(n.x + 3, n.y + (n.s ? -4 : 4), 1, 6);
       }
-    }
-    if (this.phase >= 2) {
-      const t1 = "THE KING'S", t2 = "LOST SONG";
-      ctx.textAlign = 'center';
-      ctx.font = 'bold 30px "Courier New", monospace';
-      const l1 = t1.substring(0, Math.min(this.letters, t1.length));
-      ctx.fillStyle = '#ffd250';
-      // shimmer
-      const sh = Math.sin(game.time / 20) * 8;
-      ctx.fillText(l1, W / 2, 118);
-      if (this.letters > t1.length) {
-        ctx.font = 'bold 30px "Courier New", monospace';
-        ctx.fillStyle = '#f4f4f4';
-        ctx.fillText(t2.substring(0, this.letters - t1.length), W / 2, 152);
-      }
-      // crown emblem under title
-      if (this.letters >= 21) {
-        const cw = 40;
-        ctx.fillStyle = '#ffd250';
-        const cy = 172;
-        ctx.fillRect(W/2 - 20, cy, 40, 10);
-        ctx.fillRect(W/2 - 20, cy - 8, 8, 10); ctx.fillRect(W/2 - 4, cy - 8, 8, 10); ctx.fillRect(W/2 + 12, cy - 8, 8, 10);
-        ctx.fillStyle = '#c0392b';
-        ctx.fillRect(W/2 - 4, cy + 2, 8, 5);
-      }
-      ctx.textAlign = 'left';
-    }
-    if (this.phase === 3) {
       if (Math.floor(game.time / 30) % 2 === 0) {
         ctx.fillStyle = '#f4f4f4'; ctx.font = '12px "Courier New", monospace'; ctx.textAlign = 'center';
-        ctx.fillText('ontouchstart' in window ? 'TAP TO BEGIN' : 'PRESS ENTER', W / 2, 208);
+        ctx.fillText('ontouchstart' in window ? 'TAP TO BEGIN' : 'PRESS ENTER', W / 2, 212);
         ctx.textAlign = 'left';
       }
     }
+    // lightning flash overlay
+    if (this.flash > 0) {
+      ctx.fillStyle = 'rgba(255,255,255,' + (this.flash / 11) * 0.9 + ')';
+      ctx.fillRect(-20, -20, W + 40, H + 40);
+    }
+    // vignette
+    const v = ctx.createRadialGradient(W/2, H/2, 80, W/2, H/2, 230);
+    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)');
+    ctx.fillStyle = v; ctx.fillRect(-20, -20, W + 40, H + 40);
+    ctx.restore();
   }
 };
 /* ---------------- Name entry ---------------- */
@@ -1293,7 +1546,7 @@ function startBoss() {
   snapCamera();
   MUSIC.play('boss');
   const b = { x: W / 2 - 8, y: 50, w: 16, h: 28, type: 'boss', hp: 40, t: 0, dir: 1,
-    hurt: 0, kx: 0, ky: 0, atkT: 0, tx: W / 2, ty: 60, phase: 1, dmg: 1, speed: 0.8 };
+    hurt: 0, kx: 0, ky: 0, atkT: 0, tx: W / 2, ty: 60, phase: 1, dmg: 1, speed: 0.5 };
   game.enemies.push(b); game.boss = b;
   startDialog([
     ['The Silence', '...'],
@@ -1305,7 +1558,7 @@ function startBoss() {
 function bossDamaged() {
   const b = game.boss;
   if (b && b.hp <= 20 && b.phase === 1) {
-    b.phase = 2; b.speed = 1.3;
+    b.phase = 2; b.speed = 0.85;
     AudioSys.fanfare();
     startDialog([
       ['The Silence', 'ENOUGH.'],
@@ -1340,7 +1593,7 @@ function updateBoss() {
     const n = b.phase === 1 ? 1 : 3;
     for (let i = 0; i < n; i++) {
       const ang = Math.atan2(p.y + 7 - cy, p.x + 6 - cx) + (i - (n - 1) / 2) * 0.35;
-      fireProj(cx, cy, Math.cos(ang), Math.sin(ang), 1.8);
+      fireProj(cx, cy, Math.cos(ang), Math.sin(ang), 1.15);
     }
     AudioSys.hit();
   }
